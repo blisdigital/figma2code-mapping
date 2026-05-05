@@ -1,11 +1,8 @@
 # [ComponentNaam]
 
-[Eén-zinnige beschrijving van wat het component is en doet.]
+[Eén-zinnige technische beschrijving: wat is het component, op welke library/wrapper baseert het.]
 
-**Wanneer gebruiken.** [Bij welke Figma-frames / use-cases dit component gebruiken.
-Inclusief wanneer **niet** te gebruiken — dat voorkomt verkeerde selectie.]
-
-**Figma:** `[node-id]` ([link](https://www.figma.com/...))
+**Figma:** `[node-id]` ([link](https://www.figma.com/...)) — master | frame | géén master
 
 **Locatie in codebase:** `src/components/...`
 
@@ -13,56 +10,50 @@ Inclusief wanneer **niet** te gebruiken — dat voorkomt verkeerde selectie.]
 
 ## Compositie
 
-[Voor molecules en organisms: welke componenten gebruikt dit?]
+| Component | Locatie |
+|---|---|
+| `[Naam]` | `src/components/...` of `[extern]` |
 
-| Component | Rol | Locatie |
-|---|---|---|
-| `[Naam]` | [Wat doet het in deze compositie] | `src/components/...` |
+**Uses:** [Komma-gescheiden lijst van directe component-imports — alleen interne. Atoms hebben hier `—`.]
 
-**Uses:** [Komma-gescheiden lijst van directe component-imports. Atoms hebben hier `—`.]
-
-## Voorbeeld
+## Voorbeeld (optioneel)
 
 ```tsx
-// Code-snippet die toont hoe dit component gebruikt wordt
+// Eén canonical use, max 5 regels. Weglaten als triviaal.
 ```
 
 ## Props
 
+[Compact — alleen WorQX-specifieke props. MUI-doorgeleide props weglaten tenzij default afwijkt.]
+
 | Prop | Type | Default | Beschrijving |
 |---|---|---|---|
-| `[naam]` | `[type]` | `[default]` | [Wat doet deze prop] |
-
-## Wat dit component toevoegt
-
-[Voor wrappers en composed components: wat doet déze component bovenop de
-wrapper-component(en)? Bijvoorbeeld: ConfirmationModal voegt loading-state, hardcoded
-twee-knop-structuur, en `hideFooterBorder` default toe aan de generieke Modal.]
+| `[naam]` | `[type]` | `[default]` | [korte beschrijving — wat het instelt, geen gedrag] |
 
 ## Mapping: Figma → Code
 
-[Per sub-element: korte prosa-beschrijving + tabel met de mapping. Geef de mens een
-leesbare uitleg, geef de agent een scanbare tabel.]
+[Per sub-element één korte alinea (max 3 regels) + tabel. Géén edge cases, géén gedrag, géén "wanneer gebruiken".]
 
 ### [Sub-element naam]
 
-[Eén alinea prosa: waar komt dit vandaan in code, wat doet het visueel, welke tokens
-worden gebruikt.]
+[Korte mapping-context — waar in code, welke tokens. Max 3 regels.]
 
 | Eigenschap | Code-waarde | Token / Bron |
 |---|---|---|
 | [...] | [...] | [...] |
 
-### [Volgend sub-element]
+### Variant-mapping (alleen als component variants of states heeft)
 
-[Idem.]
+[Disambiguatie voor MCP: welke Figma-variant matcht welk code-resultaat.]
 
-## Edge cases
-
-[Bekende randgevallen die de implementatie afdekt of waar gebruikers op moeten letten.]
+| Figma variant / state | Code-component | Code-props |
+|---|---|---|
+| `[bv. primary]` | `[bv. Button]` | `[bv. variant="contained" color="highlight"]` |
 
 ## Drift-aandachtspunten
 
-[Optioneel — alleen invullen wanneer er bekende drift is tussen Figma en code die de
-gebruiker moet weten. Eén regel per drift-punt, niet uitgebreid. Kan weggelaten worden
-als er geen drift is.]
+[Optioneel — alleen invullen wanneer er drift is die de drift-test passeert (zou MCP-codegen vanuit Figma een visueel verkeerd resultaat geven? Ja → drift). `[VERIFY]`-items, hardcoded-met-juiste-waarde, en code-only-abstractie-administratie horen NIET hier — die gaan naar `verify-queue.md` of nergens. Eén regel per drift.]
+
+> **Spec laatst gevalideerd:** [datum]. Code-files in sync (hash `[...]`). [Optioneel: cache-status MCP.]
+
+- [drift-type] [Severity][Owner] — [bestand:regel] [wat verschilt]. Actie: [wat te doen].
