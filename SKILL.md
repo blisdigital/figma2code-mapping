@@ -65,6 +65,13 @@ Voorkomt dat handmatig wordt gewerkt met verouderde mappings.
 **Mapping zonder actieve MCP** kan, mits cache aanwezig is — noteer dan dat de cache
 niet via MCP is geverifieerd.
 
+**Selection-based MCP zonder node-id.** Wanneer de Figma desktop-app open is met een
+node geselecteerd én de MCP-tool ondersteunt selectie-fallback (`mcp__Figma__get_design_context`
+zonder `nodeId`-parameter): gebruik dat — de tool fetched dan de huidige selectie. Lower-friction
+voor "ik kijk naar dit element en wil het mappen". Wel: leg de uiteindelijk gefetchte
+node-id altijd vast in de spec en in de cache, zodat de mapping reproduceerbaar is in
+volgende sessies. Geen anonieme "current selection"-mappings.
+
 **Master-verificatie via instance-id-format.** Wanneer een master-page niet direct
 bereikbaar is via MCP (master ligt op andere page in de Figma-file), maar instances
 ervan wél bereikbaar zijn via een ander frame: het instance-id-format
@@ -72,6 +79,16 @@ ervan wél bereikbaar zijn via een ander frame: het instance-id-format
 is niet vereist — instance-rendering binnen een geverifieerd frame levert alle
 mapping-data die voor MCP-codegen nodig is. Documenteer in cache-bestand:
 `master_verified_via: "instance-id-format"`.
+
+## Asset-handling (SVG, images, icons)
+
+MCP-output bevat regelmatig asset-URLs in de vorm `http://localhost:3845/assets/<hash>.svg` of `<hash>.png`. Drie regels:
+
+1. **Bestaande asset zoeken eerst.** Als de codebase al een asset heeft die deze Figma-asset representeert (bv. `images/icons/ui/close.svg?react` voor een close-icoon), gebruik die. Map'en in de spec onder de mapping-tabel: `Icon-source | images/icons/ui/close.svg?react | lokale SVG-import`.
+2. **Geen nieuwe icoonpackages installeren.** Geen `npm install lucide-react`, geen `@mui/icons-material`-import "voor de zekerheid". Alle assets komen óf uit de bestaande project-assets, óf direct uit de Figma MCP-payload (localhost-URL).
+3. **Geen placeholders.** Wanneer MCP een `localhost`-URL teruggeeft: gebruik die direct, of download het asset eenmalig naar de project-conventie-locatie en map daarheen. **Nooit** een placeholder of TODO-comment achterlaten.
+
+Wanneer een Figma-asset niet in code bestaat én niet uit MCP komt: stop, vraag de gebruiker. Niet improviseren met een lookalike.
 
 ## De documenten
 
@@ -157,6 +174,17 @@ de drift-test toepassen: matcht de Figma-rendered output? Bij verschil: drift in
 + `drifts.md`, niet pas in volgende re-validatie-pass. Drift-detectie hoort bij A4,
 niet bij re-validatie.
 
+**MCP-fetch volgorde bij grote/complexe nodes.** Standaard:
+
+1. `get_design_context(nodeId)` — directe haal.
+2. **Bij truncatie of "te complex"-respons:** `get_metadata(nodeId)` voor de child-tree.
+3. Identificeer de relevante child-nodes uit de metadata-XML.
+4. Loop door en `get_design_context(<childId>)` per relevante child; assembleer het beeld.
+
+Niet improviseren als de eerste fetch onvolledig is — altijd via metadata splitsen voordat je verder map't.
+
+**Literal strings zijn ook mapping.** Component-specifieke strings die in code geëmit worden — `aria-label`, `alt`, `placeholder`, `title`-attributen — zijn **mapping-data**, geen gedrag. Map ze net als tokens: code-waarde + Figma-bron. Voorkomt dat MCP-codegen een generieke `aria-label="Close"` produceert in plaats van het bestaande `"Sluit venster"`. Niet alle a11y-aspecten zijn mapping (focus-traps, keyboard-navigatie zijn gedrag), wel deze literale strings.
+
 ### A5. Recursief Uses afmaken (zonder aparte permission-vraag)
 
 Na elke component-mapping: scan de Uses-kolom van de zojuist gemapte component.
@@ -177,6 +205,22 @@ worden alle drie gemapt in dezelfde sessie. `Modal` op zijn beurt gebruikt
 
 Bij echt ontbrekende code (component bestaat niet, terwijl Figma 'm wel toont):
 stop en markeer als `component-missing` drift, vraag wat te doen.
+
+### A6. Validation-checklist (afsluiting per mapping-pass)
+
+Aan het einde van elke component-mapping (vóór commit/sync) loop je deze 7 checks expliciet langs. Drift-test is filter (wat ga ik markeren?); deze checklist is positief (heb ik niets stilzwijgend laten lopen?).
+
+| # | Check | Waar gevalideerd |
+|---|---|---|
+| 1 | **Layout** — sizing, spacing, alignment matchen MCP-output (binnen scope-regels) | Mapping-tabellen + drift-aandachtspunten |
+| 2 | **Typografie** — font-family, size, weight, line-height matchen Figma-style | Mapping-tabel onder "Tekst" |
+| 3 | **Kleuren** — exact match op Figma-variabele (Yellow/Y100, Blue/B30, etc.) of `[VERIFY]` | Mapping-tabel onder "Container/Kleur" |
+| 4 | **States** — variants en states (hover/focus/active/disabled) gemapt waar Figma die toont | Variant-mapping subsectie |
+| 5 | **Assets** — SVG/icon/image-bronnen verwijzen naar bestaande project-assets of MCP-localhost-URL — geen nieuwe imports, geen placeholders | Mapping-tabel "Icon-source / Asset" |
+| 6 | **Literal strings** — `aria-label`, `alt`, `placeholder`, `title`, hardcoded labels in code zijn gemapt (code-waarde + bron) | Mapping-tabel "Tekst" of aparte rij "Aria-label" |
+| 7 | **Drift-test gepasseerd** — kandidaat-issues geclassificeerd: drift, verify-queue, of weg | `drifts.md` + `verify-queue.md` |
+
+Vink in de spec onder "Drift-aandachtspunten" af: *"Spec laatst gevalideerd: [datum] (A6 doorlopen)."*
 
 ## Wat lees je wanneer
 
@@ -217,13 +261,17 @@ of `figma-master-missing` voor code-only abstracties (administratief, geen drift
 
 ## Selectie van componenten
 
-Bij het mappen van een Figma-frame naar code: **organism eerst, dan molecules, dan atoms.**
+Twee regels die samen werken:
+
+**1. Consume existing components — never regenerate.** Voor elk Figma-element in een frame: zoek eerst of er een matchend code-component bestaat (via `components.md`, `src/components/`-scan, of Code Connect). Als ja: import en gebruik. Genereer **nooit** een nieuwe versie van iets wat al bestaat — ook niet "voor de zekerheid" of "iets aangepast voor deze use case". Een afwijkend gebruik is óf een prop-keuze, óf drift, óf legitieme reden voor uitbreiding van het bestaande component.
+
+**2. Organism eerst, dan molecules, dan atoms.** Wanneer er meerdere geldige code-componenten kunnen matchen: kies het hoogste atomic-level dat past. Combineer geen losse atoms als er al een molecule of organism het werk doet.
 
 - **Atom** — onsplitsbaar (Button, Input, Icon, Badge)
 - **Molecule** — samenstelling van atoms met één gedeeld doel
 - **Organism** — eigen state, scroll-gedrag, of keyboard-handling
 
-Bij twijfel: kies het lagere niveau.
+Bij twijfel: kies het lagere niveau. Bij volledige afwezigheid van een matchend component → `component-missing` drift, niet auto-genereren.
 
 ## Wat je niet doet
 
@@ -234,12 +282,29 @@ Bij twijfel: kies het lagere niveau.
 - Geen folders of bestanden aanmaken zonder eerst te vragen
 - **Geen gedragsdocumentatie.** Specs bevatten alléén mapping-data: wat heeft MCP nodig om correct te genereren? Niet "Wanneer gebruiken", "Edge cases", "Wat dit component toevoegt", "Selectie-disambiguatie", hover/focus/active-narratief, a11y-uitleg. Dat leeft in code en is buiten scope. Visuele verwarbaarheid wordt opgelost via Variant-mapping en Master-id, niet via prosa.
 
-## Wat dit niet is
+## Skill-boundary
 
-- Geen design-system documentatie-tool. Doel is mapping, niet een complete design-laag bouwen.
-- Geen drift-detectie als hoofdfunctie. Drift wordt kort gemarkeerd; mapping is het primaire werk.
-- Geen vervanging voor Figma Code Connect. Voor projecten waar Code Connect is opgezet, doet die de mapping automatisch.
-- Geen documentatie van gedrag. Hover, focus, motion leven in code.
+Wanneer wel, wanneer niet, en waar dan wel naartoe.
+
+| Scenario | Deze skill? | Anders: |
+|---|---|---|
+| Figma-frame mappen naar bestaande code (1 component) | ✅ ja | — |
+| Figma-frame mappen naar bestaande code (volledige pagina) | ✅ ja, recursief via A5 (organisms → molecules → atoms van die pagina) | — |
+| Tokens/components/specs bijwerken in een bestaand mapping-project | ✅ ja | — |
+| Drift detecteren tussen Figma en bestaande code | ✅ ja, als bijproduct van mapping | — |
+| Hele pagina **vanuit een tekstbeschrijving** bouwen (geen Figma-input) | ❌ nee | `figma-generate-design` of `frontend-design` (greenfield) |
+| Figma-bestand **schrijven** (nodes maken, variabelen aanmaken, components updaten) | ❌ nee | `figma-use` |
+| Code Connect-mappings (`.figma.ts`) maken | ❌ nee | `figma-code-connect` |
+| Een design-system bouwen in Figma vanuit code | ❌ nee | `figma-generate-library` |
+| AI-rules schrijven voor een project (CLAUDE.md / AGENTS.md) | ❌ nee | `figma-create-design-system-rules` |
+
+**Volledige pagina nuance.** Onze skill werkt voor pagina-Figma-frames net zo goed als voor losse componenten — input is in beide gevallen een Figma-node. Het verschil met `figma-generate-design` zit in de input-vorm: wij hebben Figma-pixels nodig, zij accepteren tekst-briefings. Voor een pagina draaien wij A1–A6 recursief, één organism per keer, totdat alle children zijn gemapt.
+
+**Wat dit niet is:**
+- Geen design-system-documentatie-tool — doel is mapping, geen complete design-laag bouwen.
+- Geen drift-detectie als hoofdfunctie — drift wordt kort gemarkeerd; mapping is het primaire werk.
+- Geen vervanging voor Figma Code Connect — waar Code Connect bestaat, doet die de mapping automatisch.
+- Geen gedragsdocumentatie — hover, focus, motion, keyboard-handling leven in code, niet in specs.
 
 ## Lessons learned
 
