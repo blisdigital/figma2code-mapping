@@ -28,14 +28,19 @@ Bij elk werk aan componenten, tokens, of Figma-mapping: gebruik de figma-to-code
 
 **Werkwijze in het kort:**
 - Code is source of truth, Figma is intent
-- Drie documenten in `docs/` houden de mapping: `tokens.md`, `components.md`, `components/<naam>.md`
+- Vijf documenten in `docs/` houden de mapping:
+  - `tokens.md` — driekoppige token-mapping
+  - `components.md` — atomic-design index met Uses-relaties
+  - `components/<naam>.md` — per-component mapping-spec
+  - `drifts.md` — geaggregeerde drift-test-passers
+  - `verify-queue.md` — onbevestigde mappings voor volgende live-MCP-sessie
 - Lezen voor schrijven, geen improvisatie bij gaten, organisms eerst bij selectie
-- Drift wordt kort gemarkeerd, niet uitvoerig gerapporteerd
+- Drift wordt kort gemarkeerd via de drift-test, niet uitvoerig gerapporteerd
 
 **Volledige werkwijze:** `~/.claude/skills/figma-to-code/SKILL.md`
 
 **Slash-commando's:**
-- `/figma-to-code map <component>` — documenteer een component
+- `/figma-to-code map <component>` — documenteer een component (volledige A1-A6)
 - `/figma-to-code setup` — maak `docs/`-structuur aan (alleen eerste keer)
 ````
 

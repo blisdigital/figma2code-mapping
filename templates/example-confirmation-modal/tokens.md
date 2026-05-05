@@ -36,10 +36,7 @@ TypeScript theme-object. Code-pad is `theme.<categorie>.<token>`.
 | `theme.blue[30]` | `Blue/B30` | `#D3E4EA` | Modal mobile borderTop, SecondaryButton border |
 | `theme.yellow[100]` | `Yellow/Y100` | `#FFCD00` | Highlight via theme.highlight |
 
-> **Note bij `theme.neutral.N100`** in `confirmation-modal_styles.ts`: deze import
-> bestaat niet in de gevonden colors.ts. Code zou faillen tenzij `neutral` elders is
-> gedefinieerd. **DRIFT: hardcoded-value** — waarde is `#1D2632`, identiek aan
-> `theme.gray[100]`. Verifiëren of dit een import-typo is of een aparte palette.
+> **Note.** `theme.gray[100]` heeft dezelfde waarde (#1D2632) als `theme.neutral.N100` — duplicaat in code. Voor mapping op Figma `Neutral/N100`: gebruik `theme.neutral.N100`. Bestaande componenten die `theme.gray[100]` gebruiken zijn niet drift, maar nieuwe code volgt de neutral-laag.
 
 ## Spacing
 

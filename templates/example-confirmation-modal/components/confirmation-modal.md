@@ -1,17 +1,10 @@
-# ConfirmationModal — Voorbeeld (Blis)
+# ConfirmationModal — Voorbeeld
 
-> **Dit is een ingevuld voorbeeld** ter referentie. Kopieer niet rechtstreeks — gebruik
-> `templates/component-spec.md` voor je eigen project.
+> **Ingevuld voorbeeld uit een React + MUI + Emotion project.** Adopteer de **structuur** (secties, mapping-tabellen, drift-format), niet de waarden of imports — die zijn project-specifiek. Gebruik `templates/component-spec.md` voor je eigen project.
 
-Modale dialoog voor het bevestigen van een actie met twee uitkomsten: annuleren of
-bevestigen. Wrapper rondom de generieke `Modal`-component met voorgedefinieerde
-structuur (titel, message, twee knoppen) en loading-state-handling op de bevestig-knop.
+Bevestigings-modal met titel + message + 2 CTAs (Annuleren links, primary actie rechts) + optionele loading-state op de primary CTA. Wrapper bovenop generieke `Modal`.
 
-**Wanneer gebruiken.** Bij Figma-frames die een actie-bevestiging tonen met titel +
-message + twee knoppen. **Niet** voor modals met formulieren, multi-step flows, of
-complexe content — gebruik dan `Modal` direct.
-
-**Figma:** `16570:2642`
+**Figma:** frame `16599:2645` ([link](https://www.figma.com/...)) — frame, geen Figma-master.
 
 **Locatie in codebase:** `src/components/ui/confirmation-modal/`
 
@@ -19,96 +12,84 @@ complexe content — gebruik dan `Modal` direct.
 
 ## Compositie
 
-| Component | Rol | Locatie |
-|---|---|---|
-| `Modal` | Generieke wrapper — header, body, footer-slot, sluit-gedrag | `src/components/ui/modal/` |
-| `Button` (`color="highlight"`) | Filled confirm-knop | `src/components/ui/button/` |
-| `SecondaryButton` | Outlined cancel-knop | `src/components/ui/button/` |
+| Component | Locatie |
+|---|---|
+| `Modal` | `src/components/ui/modal/` |
+| `SecondaryButton` | `src/components/ui/button/` |
+| `Button` | `src/components/ui/button/` |
 
 **Uses:** Modal, Button, SecondaryButton
 
 ## Voorbeeld
 
 ```tsx
-<ConfirmationModal
-  isOpen={isModalOpen}
-  onClose={() => setIsModalOpen(false)}
-  onConfirm={handleConfirm}
-  title="Creditbundel aanvragen"
-  message="Weet je zeker dat je Creditbundel [Size] wilt aanvragen?"
-  confirmLabel="Aanvragen"
-  isLoading={isSubmitting}
-/>
+<ConfirmationModal isOpen={isOpen} onClose={onClose} onConfirm={onConfirm}
+  title="Wachtwoord resetten" message="Weet je zeker..."
+  confirmLabel="Wachtwoord resetten" isLoading={isResetting} />
 ```
 
 ## Props
 
 | Prop | Type | Default | Beschrijving |
 |---|---|---|---|
-| `isOpen` | `boolean` | — | Modal zichtbaar |
-| `onClose` | `() => void` | — | Sluit-callback |
-| `onConfirm` | `() => void` | — | Bevestig-callback |
-| `title` | `string` | — | Header-titel |
-| `message` | `string` | — | Body-tekst (in `<p>`) |
-| `confirmLabel` | `string` | — | Label van de bevestig-knop |
-| `isLoading` | `boolean` | `false` | Disabled confirm + label `"Bezig..."` |
-
-## Wat dit component toevoegt
-
-ConfirmationModal is een smalle wrapper rond Modal. Hij doet drie dingen:
-
-1. Hardcodet de footer-actions naar [SecondaryButton + Button] in die volgorde
-2. Voegt loading-state toe (disabled + label-swap naar `"Bezig..."`)
-3. Zet `hideFooterBorder` standaard aan
+| `isOpen` | `boolean` | — | Of de modal getoond wordt |
+| `onClose` | `() => void` | — | Klik op X / Cancel / esc / overlay |
+| `onConfirm` | `() => void` | — | Klik op primary action-knop |
+| `title` | `string` | — | Titel |
+| `message` | `string` | — | Body-tekst |
+| `confirmLabel` | `string` | — | Label voor primary knop |
+| `isLoading` | `boolean` | `false` | Disabled primary + label-swap naar `"Bezig..."` |
 
 ## Mapping: Figma → Code
 
-### Modal-container
+### Modal-frame (achtergrond, container)
 
-Komt uit Modal-component. Op desktop gecentreerd met vaste breedte en afgeronde hoeken.
+Frame is een afgerond witte container met drop-shadow. Gerenderd via `Modal` (zie modal.md voor container-mapping). ConfirmationModal voegt geen container-styling toe.
 
-| Eigenschap | Code-waarde | Token |
+### Header — title + close
+
+Gerenderd via `Modal` (zie modal.md Header-mapping). ConfirmationModal levert alleen de `title`-prop.
+
+### Body — message-tekst
+
+`<p css={messageStyles}>{message}</p>` binnen `<ModalInner>`. Styling uit `confirmation-modal.styles.ts`.
+
+| Eigenschap | Code-waarde | Token / Bron |
 |---|---|---|
-| Width (desktop) | `604px` | hardcoded |
-| Padding (vertical) | `theme.spacing.xl` (24px) | tokens.md |
-| Padding (horizontal) | `theme.spacing.xxl` (32px) | tokens.md |
-| Border-radius | `theme.radius.lg` (16px) | tokens.md |
-| Background | `'white'` | `theme.white` |
-| Box-shadow | `theme.shadows.lg` | tokens.md |
-
-### Body
-
-`<p>` met `messageStyles`.
-
-| Eigenschap | Code-waarde | Token |
-|---|---|---|
-| Color | `#1D2632` | `theme.neutral.N100` |
+| Margin | `0` | hardcoded (reset) |
+| Kleur | `#1D2632` | `theme.neutral.N100` |
 | Font-size | `12px` | `theme.fontSizes.xs` |
-| Line-height | `'16px'` (hardcoded) | identiek aan `theme.lineHeights.xs` |
-| Font-weight | `500` | `theme.fontWeights.regular` |
+| Font-weight | `500` | `theme.fontWeights.regular` (visueel "Medium") |
+| Line-height | `16px` | hardcoded (matcht `theme.lineHeights.xs`) |
 
-### Buttons
+### Footer — Cancel + primary
 
-Confirm: `<Button color="highlight" variant="contained">`. Cancel: `<SecondaryButton>`.
+`<ModalFooter>` met `actions={<><SecondaryButton/><Button/></>}` en `hideFooterBorder={true}`.
 
-| Eigenschap | Code-waarde | Token |
+**Cancel-knop:**
+
+| Eigenschap | Code-waarde | Token / Bron |
 |---|---|---|
-| Confirm background | `#FFCD00` | `theme.highlight` |
-| Confirm height | `38px` | hardcoded |
-| Cancel background | `#FFFFFF` | `theme.white` |
-| Cancel border | `1px solid #D3E4EA` | `theme.blue[30]` |
+| Component | `<SecondaryButton onClick={onClose}>` | zie secondary-button.md |
+| Label | `"Annuleer"` | hardcoded |
 
-## Edge cases
+**Primary action-knop:**
 
-- `isLoading=true`: confirm-knop disabled, label `"Bezig..."`. SecondaryButton blijft
-  actief — annuleren tijdens laden is mogelijk.
-- Lange title of message: Modal heeft `maxHeight: '80vh'` met `overflow: 'auto'` op
-  desktop.
+| Eigenschap | Code-waarde | Token / Bron |
+|---|---|---|
+| Component | `<Button variant="contained" color="highlight">` | zie button.md |
+| Label | `props.confirmLabel` (of `"Bezig..."` bij isLoading) | dynamic |
+| Disabled-state | `disabled={isLoading}` | code |
+
+### Variant-mapping
+
+| Figma context | Code-component | Code-props |
+|---|---|---|
+| Reset password modal-frame `16599:2645` | `ConfirmationModal` | `title="..." message="..." confirmLabel="..."` |
 
 ## Drift-aandachtspunten
 
-- **Body color** gebruikt `theme.neutral.N100` maar `colors.ts` heeft geen `neutral`
-  export. Code zou faillen of `neutral` is elders gedefinieerd. Verifiëren.
-- **Hardcoded `lineHeight: '16px'`** is identiek aan `theme.lineHeights.xs` — quick
-  win om te vervangen.
-- **`"Bezig..."`** is hardcoded NL. Indien i18n nodig: extraheren naar prop.
+> **Spec laatst gevalideerd:** 2026-05-05 (A6 doorlopen). Code-files in sync (hash `8d401e0...`). Cache via live MCP geverifieerd.
+
+- **value-mismatch [Major][DEV]** — `modal.tsx:49` Close-icon size hardcoded `16×16` vs Figma instance `24×24` (Δ8). Iconen-tabel: Δ >4px = Major. Beïnvloedt tap-target.
+- **token-mismatch [Minor][DEV+DESIGNER]** — `theme/tokens.ts` `shadows.lg` rgba `(29,38,50,0.20)` vs Figma `(135,173,187,0.20)`. Shadow-tabel: kleur-verschil = Minor.
