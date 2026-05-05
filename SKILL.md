@@ -1,6 +1,6 @@
 ---
 name: figma-to-code
-version: "2.1"
+version: "2.2"
 description: >
   Mapt Figma-designs op een bestaande codebase via expliciete documentatie van tokens,
   componenten, en per-component-specs. Gebruik deze skill wanneer de gebruiker zegt
@@ -48,6 +48,8 @@ Wanneer wel, wanneer niet, en waar dan wel naartoe.
 | Figma-frame mappen naar bestaande code (volledige pagina) | ✅ ja, recursief via A5 (organisms → molecules → atoms van die pagina) | — |
 | Tokens/components/specs bijwerken in bestaand mapping-project | ✅ ja | — |
 | Drift detecteren tussen Figma en bestaande code | ✅ ja, als bijproduct van mapping | — |
+| Figma-frame **implementeren als werkende code** (mapping aanwezig) | ✅ ja, zie Implementatie-stap | — |
+| Figma-frame implementeren **zonder bestaande mapping** | ⚠️ eerst A1-A6 mappen, dán implementeren | (zelfde skill, maar volgorde respecteren) |
 | Hele pagina **vanuit een tekstbeschrijving** bouwen (geen Figma-input) | ❌ nee | `figma-generate-design` of `frontend-design` (greenfield) |
 | Figma-bestand **schrijven** (nodes maken, variabelen aanmaken) | ❌ nee | `figma-use` |
 | Code Connect-mappings (`.figma.ts`) maken | ❌ nee | `figma-code-connect` |
@@ -66,6 +68,7 @@ Wanneer wel, wanneer niet, en waar dan wel naartoe.
 
 - `/figma-to-code setup` — vraag bevestiging, dan `docs/`-structuur aanmaken in projectrepo
 - `/figma-to-code map <component>` — start mapping van die component (volledige A1-A6)
+- `/figma-to-code implement <Figma-link>` — implementeer Figma-frame als code (consumeert bestaande mapping; route naar A1-A6 als mapping ontbreekt)
 - `/figma-to-code init-claude-md` — toon markdown-blok om in projectrepo CLAUDE.md te plakken
 
 ## Bron-verdeling
@@ -259,6 +262,35 @@ Aan het einde van elke component-mapping (vóór commit/sync) loop je deze 7 che
 | 7 | **Drift-test gepasseerd** — kandidaat-issues geclassificeerd: drift, verify-queue, of weg | `drifts.md` + `verify-queue.md` |
 
 Vink in de spec onder "Drift-aandachtspunten" af: *"Spec laatst gevalideerd: [datum] (A6 doorlopen)."*
+
+## Implementatie — mapping consumeren
+
+Wanneer de ontwikkelaar vraagt om een Figma-frame als **werkende code** op te leveren (geen mapping-update, maar concrete output): consumeer de bestaande mapping als ground-truth. Vertaal niet de Figma-MCP-output letterlijk — dat ondermijnt de hele reden waarom de mapping bestaat.
+
+### Triggers
+
+- Figma-URL gedeeld met implementatie-intent ("bouw dit", "implementeer", "code dit op")
+- `/figma-to-code implement <Figma-link>`
+- Vervolgvraag na een mapping-pass ("nu de code")
+
+### Stappen
+
+1. **Mapping-aanwezigheid checken.** Bestaan `tokens.md`, `components.md` en per-component-specs voor de gevraagde scope? Nee → stop, route naar A1-A6 eerst. Implementatie zonder mapping is geen short-cut — het omzeilt de skill (Hard rule #1).
+2. **Lees bestaande mapping.** `tokens.md` voor design-tokens, `components.md` voor master-id → code-component lookup, betreffende per-component-specs voor variant-mapping en literal strings.
+3. **MCP-fetch op het frame.** `get_design_context(nodeId)`; bij truncatie de fallback-chain uit A4a (metadata → kinderen los).
+4. **Per Figma-element resolven (geen improvisatie):**
+   - Master-id → code-component uit `components.md`. Onbekend → halt, voeg toe aan `verify-queue.md`, vraag de gebruiker (Hard rule #6).
+   - Variant-mapping uit spec → exacte code-props (`variant="contained" color="highlight"`, niet "geef hem een primary look").
+   - Mapping-tabel uit spec → inline waardes (alleen wanneer geen token bestaat).
+   - Literal-string-mapping uit spec → `aria-label`, `alt`, `placeholder`, `title`. Niet `"Close"` als spec `"Sluit venster"` documenteert.
+   - Asset-handling (Hard rule #8) → bestaande project-asset eerst, dan MCP-localhost. Nooit nieuwe icoon-package, nooit placeholder.
+5. **Genereer in project-stack-conventie.** Styling-stack uit A1-inventory: Tailwind-classes, CSS-variables, CSS-modules, of CSS-in-JS. **Niet** de Tailwind-output van MCP letterlijk overnemen tenzij Tailwind ook de project-stack is. Voor Emotion: `styled` of `css={}`. Voor CSS-variables: `var(--name)`. Voor CSS-modules: scoped class.
+6. **A6 validation-checklist** vóór levering (Hard rule #10). Geen sneller-klaar-zonder-checklist.
+7. **Nieuwe drifts surfaced tijdens implementatie** → drift-test toepassen, in `drifts.md` markeren bij positief. Niet stilzwijgend "fixen" door af te wijken van code (Hard rule #2).
+
+### Principe
+
+**Implementatie raadpleegt mapping, omzeilt het niet.** Wanneer mapping incompleet is voor de gevraagde scope: eerst mappen (A1-A6), dán implementeren. De skill bouwt eenmaal een ground-truth die elke volgende implementatie sneller en consistenter maakt — alléén wanneer implementatie de mapping respecteert. Skip-the-mapping leidt direct terug naar het probleem dat deze skill oplost.
 
 ## Lessons learned
 
