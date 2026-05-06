@@ -1,6 +1,6 @@
 ---
 name: figma-to-code
-version: "2.4"
+version: "2.5"
 description: >
   Mapt Figma-designs op een bestaande codebase via expliciete documentatie van tokens,
   componenten, en per-component-specs. Gebruik deze skill wanneer de gebruiker zegt
@@ -227,11 +227,16 @@ Per element: haal node-data op via cache (refresh via MCP), lees de code, en ste
 #### A4a. MCP-fetch volgorde bij grote/complexe nodes
 
 1. `get_design_context(nodeId)` — directe haal.
-2. **Bij truncatie of "te complex"-respons:** `get_metadata(nodeId)` voor de child-tree.
-3. Identificeer de relevante child-nodes uit de metadata-XML.
-4. Loop door en `get_design_context(<childId>)` per relevante child; assembleer het beeld.
+2. **Bij timeout of "te complex"-respons: payload-reductie eerst, vóór splitsen.** MCP-servers ondersteunen verschillende parameters — gebruik wat jouw server heeft:
+   - `excludeScreenshot: true` — onderdrukt de screenshot-render, vaak de duurste stap (beschikbaar op fileKey-based MCP, niet op alle desktop-active MCPs)
+   - `forceCode: true` — dwingt code-output ook bij truncation-risico (beschikbaar op beide gangbare Figma-MCPs)
 
-Niet improviseren als de eerste fetch onvolledig is — altijd via metadata splitsen voordat je verder map't.
+   Een retry met payload-reductie is goedkoper dan direct splitsen via metadata.
+3. **Bij blijvende truncatie of timeout:** `get_metadata(nodeId)` voor de child-tree.
+4. Identificeer de relevante child-nodes uit de metadata-XML.
+5. Loop door en `get_design_context(<childId>)` per relevante child (eventueel met payload-reductie); assembleer het beeld.
+
+Niet improviseren als de eerste fetch onvolledig is — altijd via payload-reductie of metadata splitsen voordat je verder map't.
 
 #### A4b. Verplichte vergelijking per hardcoded waarde
 
@@ -298,6 +303,11 @@ Voorstel: A4 verplicht maken: per hardcoded waarde direct vergelijken met Figma-
 Situatie: Agent interpreteerde Figma's auto-paste "Implement this design from Figma." (uit *Copy Link* Dev mode) als user-instructie en deed token + button.tsx changes, gevolgd door revert.
 Wat niet werkte: Boilerplate-tekst werd verward met expliciete dev-task. Hard Rule #2 onbedoeld weggeredeneerd zonder dat user iets vroeg.
 Voorstel: Hard Rule #2 expliciet uitsplitsen wat wel/niet als code-update-trigger geldt. (Doorgevoerd in v2.4.)
+
+[LESSON — 2026-05-05] [bevestiging]
+Situatie: get_design_context op shadcn-kit Button size-symbols (1463:5702/5739/5737) gaf MCP-timeout. Eerste pass strandde drie items in verify-queue.
+Wat werkte: Retry met payload-reductie-parameter (`excludeScreenshot: true` op fileKey-based MCP) slaagde direct op alle 3 nodes. Goedkoper dan metadata-split.
+Voorstel: A4a uitbreiden — payload-reductie als eerste fallback voor timeouts, vóór metadata-split. (Doorgevoerd in v2.5.)
 
 ## Verwijzingen
 
