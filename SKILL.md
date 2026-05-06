@@ -1,6 +1,6 @@
 ---
 name: figma-to-code
-version: "2.5"
+version: "2.6"
 description: >
   Mapt Figma-designs op een bestaande codebase via expliciete documentatie van tokens,
   componenten, en per-component-specs. Gebruik deze skill wanneer de gebruiker zegt
@@ -112,7 +112,25 @@ Bij conflict wint code. Drift markeer je expliciet, niet stilzwijgend oplossen.
 
 **MCP is het verversmechanisme.** Bij elke mapping-pass: live MCP-fetch, vergelijk met cache, schrijf nieuwste versie weg, map vanuit de bijgewerkte cache.
 
-**Selection-based MCP zonder node-id.** Wanneer Figma desktop open is met een node geselecteerd én de MCP-tool ondersteunt selectie-fallback (`mcp__Figma__get_design_context` zonder `nodeId`): gebruik dat. Wel: leg de uiteindelijk gefetchte node-id altijd vast in spec en cache, zodat de mapping reproduceerbaar is. Geen anonieme "current selection"-mappings.
+**Twee gangbare Figma-MCP-servers.** Je omgeving kan een of beide hebben — gedrag verschilt:
+
+| MCP-server | Werkt op | Desktop-tab vereist? | Heeft `excludeScreenshot`? |
+|---|---|---|---|
+| Desktop-active MCP (bv. `mcp__Figma__*`) | `nodeId` (huidige actieve tab) | ✅ ja | ❌ nee — alleen `forceCode` |
+| FileKey-based MCP (bv. `mcp__2741e7c0-...`) | `nodeId` + `fileKey` | ❌ nee | ✅ ja |
+
+Voor batch-mapping (meerdere componenten op één file) is fileKey-based sneller — je hoeft Figma desktop niet open te hebben met de juiste tab. Voor "ik staar nu naar dit element en wil het mappen" is desktop-active natuurlijker.
+
+**Wat returnt welke tool — kies de juiste:**
+
+| Tool | Wat | Wanneer |
+|---|---|---|
+| `get_variable_defs` | Alleen var-bound waardes (kleuren, fonts, dimensies via Figma-variabelen) | Token-level mapping (`tokens.md`) |
+| `get_design_context` | Volledige rendering inclusief hardcoded waardes (Tailwind classes met inline pixels zoals `px-[20px]`, `h-[38px]`) | Component-spec mapping (paddings/gaps die niet via vars lopen) |
+| `get_metadata` | Tree-structuur, geen waardes | Navigatie + child-discovery |
+| `get_screenshot` | PNG/JPEG visual | Sanity-check; niet primair voor mapping |
+
+**Selection-based MCP zonder node-id.** Wanneer Figma desktop open is met een node geselecteerd én de MCP-tool ondersteunt selectie-fallback (`get_design_context` zonder `nodeId`): gebruik dat. Wel: leg de uiteindelijk gefetchte node-id altijd vast in spec en cache, zodat de mapping reproduceerbaar is. Geen anonieme "current selection"-mappings.
 
 **Mapping zonder actieve MCP** kan, mits cache aanwezig is — noteer dan `cache_verified_via_mcp: false` in het cache-bestand met reden.
 
@@ -120,11 +138,16 @@ Bij conflict wint code. Drift markeer je expliciet, niet stilzwijgend oplossen.
 
 ### Asset-handling (SVG, images, icons)
 
-MCP-output bevat regelmatig asset-URLs in de vorm `http://localhost:3845/assets/<hash>.svg` of `<hash>.png`. Drie regels:
+MCP-output bevat asset-URLs in twee vormen, afhankelijk van de MCP-server:
+
+- **Desktop-active MCP:** `http://localhost:3845/assets/<hash>.svg` — lokale Figma-server, beschikbaar zolang de desktop-app draait.
+- **FileKey-based MCP:** `https://www.figma.com/api/mcp/asset/<uuid>` — remote, **7-dagen expiratie**. Voor langer-houdbare mapping: download eenmalig naar project en map daarheen.
+
+Drie regels gelden voor beide URL-formats:
 
 1. **Bestaande asset zoeken eerst.** Als de codebase al een asset heeft die deze Figma-asset representeert (bv. `images/icons/ui/close.svg?react` voor close-icoon), gebruik die. Map in de spec onder de mapping-tabel: `Icon-source | images/icons/ui/close.svg?react | lokale SVG-import`.
-2. **Geen nieuwe icoonpackages installeren.** Geen `npm install lucide-react`, geen `@mui/icons-material`-import "voor de zekerheid". Alle assets komen óf uit bestaande project-assets, óf direct uit de Figma MCP-payload (localhost-URL).
-3. **Geen placeholders.** Wanneer MCP een `localhost`-URL teruggeeft: gebruik die direct, of download het asset eenmalig naar de project-conventie-locatie en map daarheen. Nooit een placeholder of TODO-comment achterlaten.
+2. **Geen nieuwe icoonpackages installeren.** Geen `npm install lucide-react`, geen `@mui/icons-material`-import "voor de zekerheid". Alle assets komen óf uit bestaande project-assets, óf direct uit de Figma MCP-payload-URL.
+3. **Geen placeholders.** Wanneer MCP een asset-URL teruggeeft: gebruik die direct, of download het asset eenmalig naar de project-conventie-locatie en map daarheen. Nooit een placeholder of TODO-comment achterlaten.
 
 Wanneer een Figma-asset niet in code bestaat én niet uit MCP komt: stop, vraag de gebruiker. Niet improviseren met een lookalike.
 
@@ -178,6 +201,16 @@ Format: één regel per drift in de "Drift-aandachtspunten"-sectie van de spec.
 - <type> [Severity][Owner] — <bestand:regel> <wat verschilt>. Actie: <wat te doen>.
 ```
 
+### Severity — heuristiek
+
+Categorie-niveau, niet hardgecodeerde drempels. Concrete numerieke drempels (bv. "5% lightness delta", "2px spacing delta") legt elk project zelf vast in z'n eigen CLAUDE.md indien gewenst.
+
+| Severity | Trigger |
+|---|---|
+| **Critical** | System-wide impact (font-family, primary color, base radius). Of: state-mechanisme verschilt fundamenteel (overlay vs opacity-shift). Of: code-API mismatch (variant ontbreekt waar Figma 'm als type heeft). |
+| **Major** | Visueel detecteerbaar bij side-by-side vergelijking. Of: code-missing variant die in Figma als Type-enum bestaat. Of: figma-missing semantic alias die code in meerdere components gebruikt. |
+| **Minor** | Onder visible threshold. Naming-typo's. Cosmetisch verschil zonder render-impact. Tech-debt-grens (maar tech-debt zelf is geen drift — zie drift-test). |
+
 ### Drift-test (gebruik bij elk kandidaat-drift)
 
 Eén vraag, altijd: **"Zou MCP-codegen vanuit deze Figma-node een visueel verkeerd resultaat opleveren?"**
@@ -205,6 +238,8 @@ Geef de gebruiker een korte samenvatting voor je doorgaat.
 
 Documenteer alleen tokens die het eerste component raakt. Volgende componenten breiden de tabellen uit.
 
+> **Watch out — twee parallelle scales.** Sommige Figma-kits (vooral Tailwind-mirror kits zoals shadcn-derivaten) hebben twee parallelle scales met overlappende prefix-namen: een **semantic scale** (`radius-md`, `radius-lg` voor component-design) naast een **utility scale** (`rounded-md`, `rounded-xl` als Tailwind-class mirrors). Verifieer in `tokens.md` welke scale een component daadwerkelijk gebruikt. Documenteer expliciet welke per categorie om verwarring te voorkomen.
+
 Per token een rij met:
 - Code-pad (hoe je het in components gebruikt)
 - Figma-naam (zoals het in Figma als variabele bestaat) of `[VERIFY]` indien onbevestigd
@@ -220,9 +255,33 @@ Kies samen met de gebruiker één representatieve component. Voor dat component:
 3. Vul `docs/components/<naam>.md` op basis van `templates/component-spec.md`
 4. Voeg toe aan `components.md` met Uses-kolom
 
+#### Anti-pattern: mixed-axis Type-enum in Figma
+
+Figma-kits collapsen vaak orthogonale assen in één `Type=` enum. Voorbeeld Button met 14 waardes:
+- `primary`, `secondary` → color-axis
+- `Size-small`, `Size-default`, `Size-large` → size-axis
+- `Rounded` → shape-axis
+- `loading` → state-axis
+- `with icon`, `with icon right` → composition-axis (children-volgorde)
+- `Button group` → composition-axis (parent-component)
+
+In code zijn dit typisch 5+ aparte assen (`variant` × `size` × `className` × `children-order` × `parent-wrapper`).
+
+**Mapping-strategie:**
+1. Categoriseer elke Figma `Type=` waarde naar zijn axis (color / size / shape / state / composition).
+2. Map per-axis in de Variant-mapping tabel:
+   - color-Type → code `variant` prop
+   - size-Type → code `size` prop
+   - shape-Type → code className tweak
+   - state-Type → code composition (e.g. `disabled` + child)
+   - composition-Type → code parent-wrapper of children-volgorde
+3. Documenteer de decompositie expliciet in `components/<naam>.md` zodat MCP-codegen weet welke Figma-Type-waarde naar welke code-prop matcht.
+
 ### A4. Mapping aan Figma
 
 Per element: haal node-data op via cache (refresh via MCP), lees de code, en stel een mapping voor (Figma-property → code-token of code-pad). Gebruiker bevestigt. Bij twijfel: `[VERIFY]` in de Figma-naam-kolom, niet improviseren.
+
+> **Waarschuwing — variable-scope.** `get_variable_defs(nodeId)` returnt **alleen variabelen die deze specifieke node consumeert**. Vars die file-level bestaan maar door deze node niet gebruikt worden, komen niet terug. Voor `figma-missing` conclusies in `tokens.md`: query minimaal 3 component-pages uit verschillende categorieën (knoppen / cards / forms / feedback) voordat je de gap definitief markeert. Een single-node-pass produceert vals-positieve `figma-missing` flags die latere passes moeten retracten.
 
 #### A4a. MCP-fetch volgorde bij grote/complexe nodes
 
@@ -245,6 +304,19 @@ Voor elke hardcoded waarde in code (padding, border-radius, height, etc.) direct
 #### A4c. Literal strings zijn ook mapping
 
 Component-specifieke strings die in code geëmit worden — `aria-label`, `alt`, `placeholder`, `title`-attributen — zijn mapping-data, geen gedrag. Map ze net als tokens: code-waarde + Figma-bron. Voorkomt dat MCP-codegen een generieke `aria-label="Close"` produceert in plaats van het bestaande `"Sluit venster"`. Niet alle a11y-aspecten zijn mapping (focus-traps, keyboard-navigatie zijn gedrag) — wel deze literale strings.
+
+#### A4d. State-symbols apart queryen van default-symbols
+
+Voor elke variant met een `State=` enum in Figma (hover, focus, active, disabled): query de state-symbol(s) **los van** het default-symbol.
+
+Page-level `get_variable_defs(parent-frame)` aggregeert vars over alle child-nodes — dat verbergt welke variant welke variabele consumeert. Conclusies over state-mechanisme op aggregated data zijn structureel fragiel: ze leiden tot foutieve drifts of verkeerde hover/active-mappings die volgende passes moeten corrigeren.
+
+Werkwijze:
+1. `get_variable_defs(default-symbol-id)` — toont default-tokens.
+2. `get_variable_defs(state-symbol-id)` — toont of de state een andere kleur of mechanisme gebruikt.
+3. Diff de resultaten. Andere vars in state = mechanisme wijkt af (bv. color-shift naar ander var, i.p.v. opacity-reduction op zelfde var).
+
+Documenteer per variant in `components/<naam>.md` (Variant-mapping subsectie) welk state-mechanisme actief is.
 
 ### A5. Recursief Uses afmaken (zonder aparte permission-vraag)
 
@@ -308,6 +380,21 @@ Voorstel: Hard Rule #2 expliciet uitsplitsen wat wel/niet als code-update-trigge
 Situatie: get_design_context op shadcn-kit Button size-symbols (1463:5702/5739/5737) gaf MCP-timeout. Eerste pass strandde drie items in verify-queue.
 Wat werkte: Retry met payload-reductie-parameter (`excludeScreenshot: true` op fileKey-based MCP) slaagde direct op alle 3 nodes. Goedkoper dan metadata-split.
 Voorstel: A4a uitbreiden — payload-reductie als eerste fallback voor timeouts, vóór metadata-split. (Doorgevoerd in v2.5.)
+
+[LESSON — 2026-05-05] [correctie]
+Situatie: Pass-1 (Accordion alleen) markeerde 14 tokens als figma-missing. Pass-2 op Button-page bewees dat 6 daarvan wél bestaan in Figma — niet op Accordion. Eén grote correctie nodig in tokens.md + drifts.md.
+Wat niet werkte: Single-node `get_variable_defs` is scope-beperkt tot wat die node consumeert. Vals-positieve `figma-missing` flags ontstaan automatisch bij beperkte query-set.
+Voorstel: A4 waarschuwing — minimaal 3 component-pages uit verschillende categorieën queryen voor `figma-missing` definitief. (Doorgevoerd in v2.6.)
+
+[LESSON — 2026-05-05] [correctie]
+Situatie: Pass-2 concludeerde primary-hover gebruikte white/12 overlay op basis van Button-page-level vars. Pass-3 (per-symbol query op 73:3668) toonde dat primary-hover chart-1 + opacity:0.9 gebruikt — géén white/12.
+Wat niet werkte: Page-level `get_variable_defs` aggregeert vars; identiteit per variant/state gaat verloren. Conclusies over hover-mechanisme op aggregated data zijn structureel fragiel.
+Voorstel: A4d toevoegen — voor State=hover/focus/active symbols apart queryen voor accuraat mapping. (Doorgevoerd in v2.6.)
+
+[LESSON — 2026-05-05] [bevestiging]
+Situatie: Live MCP-tests bevestigen dat asset-URLs verschillen per MCP-server: `localhost:3845/...` (desktop-active) vs `figma.com/api/mcp/asset/...` (fileKey-based, 7-dagen TTL). Plus: fileKey-MCP ondersteunt `excludeScreenshot`, desktop-MCP niet.
+Wat werkte: Optie-C in skill — beide MCPs expliciet documenteren met capability-verschillen helpt agents kiezen welke tool past bij batch- vs eyes-on werk.
+Voorstel: MCP-server-tabel + asset-URL dual-format expliciet vastleggen in Bron-mechanisme. (Doorgevoerd in v2.6.)
 
 ## Verwijzingen
 
