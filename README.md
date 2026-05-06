@@ -33,7 +33,7 @@ De aanbevolen aanpak is een **symlink** vanuit `~/.claude/skills/figma-to-code/`
 
 ```bash
 # Clone deze repo
-git clone https://github.com/k-rutten/figma2code.git ~/Github/figma2code
+git clone https://github.com/blisdigital/figma2code.git ~/Github/figma2code
 
 # Symlink in ~/.claude/skills/
 ln -s ~/Github/figma2code ~/.claude/skills/figma-to-code
