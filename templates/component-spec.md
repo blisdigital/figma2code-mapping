@@ -1,59 +1,59 @@
-# [ComponentNaam]
+# [ComponentName]
 
-[Eén-zinnige technische beschrijving: wat is het component, op welke library/wrapper baseert het.]
+[One-sentence technical description: what is the component, which library/wrapper it builds on.]
 
-**Figma:** `[node-id]` ([link](https://www.figma.com/...)) — master | frame | géén master
+**Figma:** `[node-id]` ([link](https://www.figma.com/...)) — master | frame | no master
 
-**Locatie in codebase:** `src/components/...`
+**Location in codebase:** `src/components/...`
 
 **Type:** atom | molecule | organism
 
-## Compositie
+## Composition
 
-| Component | Locatie |
+| Component | Location |
 |---|---|
-| `[Naam]` | `src/components/...` of `[extern]` |
+| `[Name]` | `src/components/...` or `[external]` |
 
-**Uses:** [Komma-gescheiden lijst van directe component-imports — alleen interne. Atoms hebben hier `—`.]
+**Uses:** [Comma-separated list of direct component imports — internal only. Atoms have `—` here.]
 
-## Voorbeeld (optioneel)
+## Example (optional)
 
 ```tsx
-// Eén canonical use, max 5 regels. Weglaten als triviaal.
+// One canonical use, max 5 lines. Omit if trivial.
 ```
 
 ## Props
 
-[Compact — alleen WorQX-specifieke props. MUI-doorgeleide props weglaten tenzij default afwijkt.]
+[Compact — only project-specific props. Pass-through props (e.g. MUI) omit unless default differs.]
 
-| Prop | Type | Default | Beschrijving |
+| Prop | Type | Default | Description |
 |---|---|---|---|
-| `[naam]` | `[type]` | `[default]` | [korte beschrijving — wat het instelt, geen gedrag] |
+| `[name]` | `[type]` | `[default]` | [short description — what it sets, no behavior] |
 
 ## Mapping: Figma → Code
 
-[Per sub-element één korte alinea (max 3 regels) + tabel. Géén edge cases, géén gedrag, géén "wanneer gebruiken".]
+[Per sub-element one short paragraph (max 3 lines) + table. No edge cases, no behavior, no "when to use".]
 
-### [Sub-element naam]
+### [Sub-element name]
 
-[Korte mapping-context — waar in code, welke tokens. Max 3 regels.]
+[Short mapping context — where in code, which tokens. Max 3 lines.]
 
-| Eigenschap | Code-waarde | Token / Bron |
+| Property | Code value | Token / Source |
 |---|---|---|
 | [...] | [...] | [...] |
 
-### Variant-mapping (alleen als component variants of states heeft)
+### Variant mapping (only when component has variants or states)
 
-[Disambiguatie voor MCP: welke Figma-variant matcht welk code-resultaat.]
+[Disambiguation for MCP: which Figma variant matches which code result.]
 
-| Figma variant / state | Code-component | Code-props |
+| Figma variant / state | Code component | Code props |
 |---|---|---|
-| `[bv. primary]` | `[bv. Button]` | `[bv. variant="contained" color="highlight"]` |
+| `[e.g. primary]` | `[e.g. Button]` | `[e.g. variant="contained" color="highlight"]` |
 
-## Drift-aandachtspunten
+## Drift notes
 
-[Optioneel — alleen invullen wanneer er drift is die de drift-test passeert (zou MCP-codegen vanuit Figma een visueel verkeerd resultaat geven? Ja → drift). `[VERIFY]`-items, hardcoded-met-juiste-waarde, en code-only-abstractie-administratie horen NIET hier — die gaan naar `verify-queue.md` of nergens. Eén regel per drift.]
+[Optional — only fill when there is drift that passes the drift test (would MCP code generation from Figma produce a visually wrong result? Yes → drift). `[VERIFY]` items, hardcoded-with-correct-value, and code-only abstraction administration do NOT belong here — those go to `verify-queue.md` or nowhere. One line per drift.]
 
-> **Spec laatst gevalideerd:** [datum]. Code-files in sync (hash `[...]`). [Optioneel: cache-status MCP.]
+> **Spec last validated:** [date]. Code files in sync (hash `[...]`). [Optional: cache status MCP.]
 
-- [drift-type] [Severity][Owner] — [bestand:regel] [wat verschilt]. Actie: [wat te doen].
+- [drift type] [Severity][Owner] — [file:line] [what differs]. Action: [what to do].

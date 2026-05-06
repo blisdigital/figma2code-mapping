@@ -1,59 +1,57 @@
-# Claude-md snippet voor projectrepo
+# Claude-md snippet for the project repo
 
-Wanneer een gebruiker `/figma-to-code init-claude-md` aanroept, toon je het volgende
-markdown-blok plus instructies. **Schrijf zelf niets naar CLAUDE.md.** De gebruiker
-plakt het zelf.
+When a user invokes `/figma-to-code init-claude-md`, show the following markdown block plus instructions. **Do not write to CLAUDE.md yourself.** The user pastes it.
 
 ---
 
-## Wat te tonen aan de gebruiker
+## What to show the user
 
-Een korte introductie:
+A short intro:
 
-> Hier is het markdown-blok dat je in `CLAUDE.md` van je projectrepo (root) kunt plakken.
-> Daarna triggert de figma-to-code skill automatisch bij elke chat in dit project —
-> zonder dat je `/figma-to-code` hoeft te typen.
+> Here is the markdown block you can paste into `CLAUDE.md` of your project repo (root).
+> After that, the figma-to-code skill triggers automatically in every chat in this project —
+> without having to type `/figma-to-code`.
 >
-> **Plaatsing:**
-> - Als `CLAUDE.md` nog niet bestaat in projectrepo-root, maak hem aan met dit blok als inhoud
-> - Als `CLAUDE.md` al bestaat, voeg dit blok toe aan het einde
+> **Placement:**
+> - If `CLAUDE.md` does not yet exist in the project-repo root, create it with this block as content
+> - If `CLAUDE.md` already exists, append this block at the end
 
-Daarna het blok in een markdown code-fence:
+Then the block in a markdown code fence:
 
 ````markdown
-## Figma-to-code werkwijze
+## Figma-to-code method
 
-Dit project gebruikt de figma-to-code skill voor mapping tussen Figma-designs en code.
-Bij elk werk aan componenten, tokens, of Figma-mapping: gebruik de figma-to-code skill.
+This project uses the figma-to-code skill for mapping between Figma designs and code.
+For any work on components, tokens, or Figma mapping: use the figma-to-code skill.
 
-**Werkwijze in het kort:**
+**Method in short:**
 - Code is source of truth, Figma is intent
-- Vijf documenten in `docs/` houden de mapping:
-  - `tokens.md` — driekoppige token-mapping
-  - `components.md` — atomic-design index met Uses-relaties
-  - `components/<naam>.md` — per-component mapping-spec
-  - `drifts.md` — geaggregeerde drift-test-passers
-  - `verify-queue.md` — onbevestigde mappings voor volgende live-MCP-sessie
-- Lezen voor schrijven, geen improvisatie bij gaten, organisms eerst bij selectie
-- Drift wordt kort gemarkeerd via de drift-test, niet uitvoerig gerapporteerd
+- Five documents keep the mapping:
+  - `docs/tokens.md` — three-column token mapping
+  - `docs/components.md` — atomic-design index with Uses relations
+  - `<component-folder>/<name>.md` — per-component mapping spec (co-located)
+  - `docs/drifts.md` — aggregated drift-test passers
+  - `docs/verify-queue.md` — unconfirmed mappings for the next live-MCP session
+- Read before write, no improvising on gaps, organisms first on selection
+- Drift is briefly marked via the drift test, not extensively reported
 
-**Volledige werkwijze:** `~/.claude/skills/figma-to-code/SKILL.md`
+**Full method:** `~/.claude/skills/figma-to-code/SKILL.md`
 
-**Slash-commando's:**
-- `/figma-to-code map <component>` — documenteer een component (volledige A1-A6)
-- `/figma-to-code setup` — maak `docs/`-structuur aan (alleen eerste keer)
+**Slash commands:**
+- `/figma-to-code map <component>` — document a component (full A1-A6)
+- `/figma-to-code setup` — create `docs/` structure (first time only)
 ````
 
-## Wat de gebruiker daarna doet
+## What the user does next
 
-1. Kopieert het blok
-2. Opent `CLAUDE.md` in projectrepo-root (of maakt hem aan)
-3. Plakt het blok aan het einde
-4. Commit naar git zodat het team-breed werkt
-5. Bij volgende chat in dit project triggert de skill automatisch
+1. Copies the block
+2. Opens `CLAUDE.md` in the project-repo root (or creates it)
+3. Pastes the block at the end
+4. Commits to git so it works team-wide
+5. On the next chat in this project the skill triggers automatically
 
-## Wat je NIET doet
+## What you do NOT do
 
-- Niet zelf naar `CLAUDE.md` schrijven in de projectrepo
-- Niet `git add` of `git commit` uitvoeren
-- Geen aanname doen over of `CLAUDE.md` al bestaat — laat de gebruiker dat zien
+- Do not write to `CLAUDE.md` in the project repo yourself
+- Do not run `git add` or `git commit`
+- Do not assume whether `CLAUDE.md` already exists — let the user check

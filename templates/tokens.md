@@ -1,84 +1,84 @@
 # Tokens
 
-Code-tokens met expliciete Figma-mapping per rij. Dit document is de **driekoppige
-mapping** tussen Figma-variabelen en code-pad (en de actuele waarde).
+Code tokens with explicit Figma mapping per row. This document is the **three-column
+mapping** between Figma variables and code path (and the actual value).
 
-> **Bron-relatie.** Code is source of truth. Tokens leven in code (CSS custom
-> properties, TypeScript theme-object, Tailwind config — afhankelijk van project).
-> Deze markdown is de mens- en agent-leesbare mapping tussen Figma en code.
+> **Source-of-truth allocation.** Code is source of truth. Tokens live in code (CSS
+> custom properties, TypeScript theme object, Tailwind config — depending on project).
+> This markdown is the human- and agent-readable mapping between Figma and code.
 
-## Format past zich aan aan codebase
+## Format adapts to the codebase
 
-Documenteer wat de codebase heeft. Forceer geen vorm. Drie veelvoorkomende vormen:
+Document what the codebase has. Do not force a form. Three common forms:
 
-**CSS custom properties:** code-pad in tabel `--color-primary`
-**TypeScript theme-object:** code-pad `theme.primary`, `theme.spacing.lg`
-**Tailwind utility:** code-pad `bg-primary`, `text-primary`
+**CSS custom properties:** code path in table `--color-primary`
+**TypeScript theme object:** code path `theme.primary`, `theme.spacing.lg`
+**Tailwind utility:** code path `bg-primary`, `text-primary`
 
-## Schrijfconventie per rij
+## Writing convention per row
 
-| Kolom | Inhoud |
+| Column | Content |
 |---|---|
-| **Code-pad** | Zoals in components gebruikt |
-| **Figma-naam** | Zoals in Figma als variabele bestaat, of `—`, of `[VERIFY]` indien onbevestigd |
-| **Waarde** | De actuele waarde |
-| **Gebruik** | Korte uitleg wanneer dit token gebruiken |
+| **Code path** | As used in components |
+| **Figma name** | As it exists in Figma as a variable, or `—`, or `[VERIFY]` if unconfirmed |
+| **Value** | The actual value |
+| **Use** | Short explanation when to use this token |
 
-## Aanpak bij eerste pass
+## First-pass approach
 
-Begin niet met de hele tokens-laag. Documenteer alleen tokens die het eerste component
-raakt. Volgende componenten breiden de tabellen uit.
+Do not start with the entire token layer. Document only tokens that the first component
+touches. Subsequent components extend the tables.
 
 ---
 
 ## Color
 
-| Code-pad | Figma-naam | Waarde | Gebruik |
+| Code path | Figma name | Value | Use |
 |---|---|---|---|
 | | | | |
 
 ## Spacing
 
-| Code-pad | Figma-naam | Waarde | Gebruik |
+| Code path | Figma name | Value | Use |
 |---|---|---|---|
 | | | | |
 
 ## Radius
 
-| Code-pad | Figma-naam | Waarde | Gebruik |
+| Code path | Figma name | Value | Use |
 |---|---|---|---|
 | | | | |
 
 ## Shadow
 
-| Code-pad | Figma-naam | Waarde | Gebruik |
+| Code path | Figma name | Value | Use |
 |---|---|---|---|
 | | | | |
 
 ## Typography
 
-| Code-pad | Figma-naam | Waarde | Gebruik |
+| Code path | Figma name | Value | Use |
 |---|---|---|---|
 | | | | |
 
 ---
 
-## Impliciete semantic-laag
+## Implicit semantic layer
 
-Sommige codebases hebben geen formele primitive/semantic-split, maar gebruiken wel
-aliassen die als semantic functioneren. Lijst hier.
+Some codebases have no formal primitive/semantic split, but use aliases that function
+as semantic tokens. List them here.
 
-| Code-pad | Verwijst naar | Gebruik |
+| Code path | Refers to | Use |
 |---|---|---|
 | | | |
 
-> **Note.** Verwijder deze sectie als jouw codebase geen impliciete semantic-laag
-> heeft. Geen forced uitbreiding.
+> **Note.** Remove this section if your codebase has no implicit semantic layer.
+> No forced expansion.
 
 ---
 
 ## Sync log
 
-| Datum | Wijziging | Reden |
+| Date | Change | Reason |
 |---|---|---|
 | | | |

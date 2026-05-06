@@ -1,57 +1,57 @@
-# Drifts — open punten
+# Drifts — open items
 
-Centrale lijst van alle open drifts uit alle component-specs. Open dit bestand om te weten wat te doen — geen 10 specs scannen.
+Central list of all open drifts from all component specs. Open this file to know what to do — no need to scan 10 specs.
 
-> **Bron-relatie.** Drifts ontstaan in `components/<naam>.md` onder "Drift-aandachtspunten" — pas na de drift-test in SKILL.md. Deze pagina aggregeert.
+> **Source-of-truth allocation.** Drifts originate in `<component-folder>/<name>.md` under "Drift notes" — only after the drift test in SKILL.md. This page aggregates.
 
-## Drift-test
+## Drift test
 
-Voor elke kandidaat: **"Zou MCP-codegen vanuit deze Figma-node een visueel verkeerd resultaat opleveren?"**
-- Ja → drift, hier vermeld.
-- Nee → andere bucket. `[VERIFY]`-items → `verify-queue.md`. Hardcoded-met-juiste-waarde, dead code, `figma-master-missing` administratief → niet hier.
+For every candidate: **"Would MCP code generation from this Figma node produce a visually wrong result?"**
+- Yes → drift, listed here.
+- No → another bucket. `[VERIFY]` items → `verify-queue.md`. Hardcoded-with-correct-value, dead code, `figma-master-missing` administrative → not here.
 
-## Drift-typen
+## Drift types
 
-| Type | Definitie | Fix-locatie |
+| Type | Definition | Fix location |
 |---|---|---|
-| `value-mismatch` | Code rendered output ≠ Figma | Call-site (component code) |
-| `token-mismatch` | Token-waarde in `theme/tokens.ts` ≠ Figma | Theme — affects all consumers |
-| `component-missing` | Figma-element zonder code-component | DEV maakt; **agent niet genereren** |
+| `value-mismatch` | Code rendered output ≠ Figma | Call site (component code) |
+| `token-mismatch` | Token value in `theme/tokens.ts` ≠ Figma | Theme — affects all consumers |
+| `component-missing` | Figma element without code component | DEV creates; **agent does not generate** |
 
 ---
 
-## Voor ontwikkelaars (DEV)
+## For developers (DEV)
 
 ### Critical
 
-_(geen)_
+_(none)_
 
 ### Major
 
-| Component | Drift | Locatie | Actie |
+| Component | Drift | Location | Action |
 |---|---|---|---|
 | | | | |
 
 ### Minor
 
-| Component | Drift | Locatie | Actie |
+| Component | Drift | Location | Action |
 |---|---|---|---|
 | | | | |
 
 ---
 
-## Voor designers (DESIGNER)
+## For designers (DESIGNER)
 
-Drifts met `[DEV+DESIGNER]`: design-keuze nodig (code aanpassen of Figma updaten?).
+Drifts marked `[DEV+DESIGNER]`: design choice required (change code or update Figma?).
 
-| Component | Drift | Wat verschilt | Vraag aan designer |
+| Component | Drift | What differs | Question for designer |
 |---|---|---|---|
 | | | | |
 
 ---
 
-## Status-log
+## Status log
 
-| Datum | Component | Drift | Status |
+| Date | Component | Drift | Status |
 |---|---|---|---|
 | | | | |

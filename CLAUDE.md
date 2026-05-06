@@ -1,48 +1,48 @@
-# figma2code — repo-context voor Claude
+# figma2code — repo context for Claude
 
-Wanneer Claude in deze repo werkt, gelden de volgende meta-regels (los van wat in `SKILL.md` staat — dat zijn regels voor het *toepassen* van de skill in een project; deze zijn voor het *bewerken* van de skill zelf).
+When Claude works in this repo, the following meta rules apply (separate from what is in `SKILL.md` — those are rules for *applying* the skill in a project; these are for *editing* the skill itself).
 
 ## Context
 
-Deze repo is de **source of truth** voor de figma-to-code skill. De skill wordt door ontwikkelaars geïnstalleerd via een symlink:
+This repo is the **source of truth** for the figma-to-code skill. The skill is installed by developers via a symlink:
 
 ```
 ~/.claude/skills/figma-to-code → ~/Github/figma2code
 ```
 
-Elke wijziging in `SKILL.md` of in `templates/` wordt na `git pull` direct actief in elk project dat de symlink gebruikt. **Wijzigingen propageren breed** — er is geen "test in één repo eerst".
+Every change to `SKILL.md` or `templates/` becomes active after `git pull` in every project that uses the symlink. **Changes propagate broadly** — there is no "test in one repo first".
 
-## Edit-regels
+## Edit rules
 
-1. **Branch + PR verplicht.** Direct push naar `main` wordt door hooks geblokkeerd. Werk altijd op een feature-branch met beschrijvende naam (`skill-<wat>`, bijvoorbeeld `skill-asset-handling-validation-boundary`).
-2. **Eén type wijziging per PR.** Splits feature-additions, leesbaarheid-restructuur, en template-aanpassingen in afzonderlijke PRs. Mengen maakt review en rollback moeilijk.
-3. **Lessons-learned format strict.** Max 5 regels per entry, exact velden: `Situatie`, `Wat werkte (of niet)`, `Voorstel`. Datum + type (correctie | bevestiging) in de header. Geen vrije tekst eromheen.
-4. **Versienummer in frontmatter ophogen** bij elke significante wijziging in `SKILL.md`. Patch (2.0 → 2.1) voor verfijningen, minor (2.x → 3.0) bij gedragswijziging die bestaande mappings raakt.
-5. **Templates niet schrijven naar projects.** Wijzigingen in `templates/` raken alléén nieuwe projecten via `/figma-to-code setup`. Bestaande mapping-docs in projecten blijven onaangeraakt — bewust, om migratie-pijn te vermijden.
+1. **Branch + PR required.** Direct push to `main` is blocked by hooks. Always work on a feature branch with a descriptive name (`skill-<what>`, e.g. `skill-asset-handling-validation-boundary`).
+2. **One type of change per PR.** Split feature additions, readability restructures, and template changes into separate PRs. Mixing makes review and rollback hard.
+3. **Lessons-learned format strict.** Max 5 lines per entry, exact fields: `Situation`, `What worked (or did not)`, `Proposal`. Date + type (correction | confirmation) in the header. No free text around it.
+4. **Bump version in frontmatter** on every significant change to `SKILL.md`. Patch (2.0 → 2.1) for refinements, minor (2.x → 3.0) on behavior changes that affect existing mappings.
+5. **Do not write templates into projects.** Changes to `templates/` only land in *new* projects via `/figma-to-code setup`. Existing mapping docs in projects stay untouched — by design, to avoid migration pain.
 
 ## Skill vs project mapping
 
-- `SKILL.md` = werkwijze + regels voor het *toepassen* van de skill in een project (in elk project geladen)
-- `CLAUDE.md` = edit-regels voor *deze repo* (alleen geladen wanneer Claude in deze repo werkt)
-- `templates/` = startpunt voor projecten die de skill installeren
-- `README.md` = developer-facing setup-gids op GitHub
+- `SKILL.md` = method + rules for *applying* the skill in a project (loaded in every project)
+- `CLAUDE.md` = edit rules for *this repo* (loaded only when Claude works in this repo)
+- `templates/` = starting point for projects installing the skill
+- `README.md` = developer-facing setup guide on GitHub
 
-Bij twijfel of iets in `SKILL.md` of `CLAUDE.md` hoort: **gaat het over het maken van een mapping in een project? → SKILL.md. Gaat het over deze repo onderhouden? → CLAUDE.md.**
+When in doubt whether something belongs in `SKILL.md` or `CLAUDE.md`: **does it concern making a mapping in a project? → SKILL.md. Does it concern maintaining this repo? → CLAUDE.md.**
 
-## Lessons-learned schrijven
+## Writing lessons-learned
 
-Bij elke significante les (zowel correctie als bevestiging) één entry onderaan `SKILL.md § Lessons learned`:
+For every significant lesson (both corrections and confirmations) one entry at the bottom of `SKILL.md § Lessons learned`:
 
 ```
-[LESSON — YYYY-MM-DD] [type: correctie | bevestiging]
-Situatie: <wat gebeurde, 1 regel>
-Wat werkte (of niet): <observatie, 1-2 regels>
-Voorstel: <regel aanpassen of houden, 1 regel>
+[LESSON — YYYY-MM-DD] [type: correction | confirmation]
+Situation: <what happened, 1 line>
+What worked (or did not): <observation, 1-2 lines>
+Proposal: <change rule or keep, 1 line>
 ```
 
-Niet langer. Niet vager. Bij overschrijding: splitsen in twee entries of de les is niet scherp genoeg geformuleerd.
+No longer. No vaguer. On overflow: split into two entries or the lesson is not sharply enough formulated.
 
 ## Reference
 
-- Symlink wordt aangemaakt door eindgebruiker (zie `README.md`); bij debug-sessies kun je `ls -la ~/.claude/skills/figma-to-code` gebruiken om te verifiëren dat de symlink bestaat.
-- Veranderingen testen: `git pull` in je eigen `~/Github/figma2code/`, dan in een test-project Claude triggeren met `/figma-to-code map <component>` op een nieuw component.
+- The symlink is created by the end user (see `README.md`); for debug sessions you can run `ls -la ~/.claude/skills/figma-to-code` to verify the symlink exists.
+- Test changes: `git pull` in your own `~/Github/figma2code/`, then trigger Claude in a test project with `/figma-to-code map <component>` on a new component.

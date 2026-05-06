@@ -1,18 +1,18 @@
-# Verify-queue — open `[VERIFY]` items
+# Verify queue — open `[VERIFY]` items
 
-Items die in een **volgende sessie met actieve Figma design-file (live MCP)** geverifieerd moeten worden. Geen drift; geen tech-debt; alleen onbevestigde aannames die de mapping correct maken zodra ze gechecked zijn.
+Items that need to be verified in a **next session with active Figma design file (live MCP)**. Not drift; not tech debt; only unconfirmed assumptions that make the mapping correct once they have been checked.
 
-> **Bron-relatie.** `[VERIFY]`-items ontstaan in component-specs of cache-files wanneer mapping wordt afgeleid uit indirect bewijs (instance-id-format, code-zoekresultaat, conventie). Deze pagina aggregeert.
+> **Source-of-truth allocation.** `[VERIFY]` items originate in component specs or cache files when mapping is derived from indirect evidence (instance-id format, code-search result, convention). This page aggregates.
 
-## Drift-test grens
+## Drift-test boundary
 
-Een `[VERIFY]`-item wordt een drift zodra het via MCP/code-check is bevestigd dat de gerendered output ≠ Figma is. Tot dan: hier, niet in `drifts.md`.
+A `[VERIFY]` item becomes a drift the moment it has been confirmed via MCP/code check that the rendered output ≠ Figma. Until then: here, not in `drifts.md`.
 
 ---
 
 ## Open
 
-| Onderwerp | Wat te verifiëren | Waar | Hoe te resolven |
+| Topic | What to verify | Where | How to resolve |
 |---|---|---|---|
 | | | | |
 
@@ -20,12 +20,12 @@ Een `[VERIFY]`-item wordt een drift zodra het via MCP/code-check is bevestigd da
 
 ## Resolved
 
-| Datum | Onderwerp | Hoe geresolved |
+| Date | Topic | How resolved |
 |---|---|---|
 | | | |
 
-## Status-log
+## Status log
 
-| Datum | Item | Status |
+| Date | Item | Status |
 |---|---|---|
 | | | |

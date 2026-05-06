@@ -1,99 +1,107 @@
 ---
 name: figma-to-code
-version: "2.6"
+version: "2.7"
 description: >
-  Mapt Figma-designs op een bestaande codebase via expliciete documentatie van tokens,
-  componenten, en per-component-specs. Gebruik deze skill wanneer de gebruiker zegt
-  "documenteer deze component", "map dit Figma-frame", "voeg X toe aan de mapping",
-  of "werk de tokens bij". Ook triggeren bij "figma-to-code", "design-to-code", of
-  wanneer de projectrepo een figma-to-code-mapping folder heeft met tokens.md en
+  Maps Figma designs onto an existing codebase via explicit documentation of tokens,
+  components, and per-component specs. Use this skill when the user says
+  "document this component", "map this Figma frame", "add X to the mapping",
+  or "update the tokens". Also triggers on "figma-to-code", "design-to-code", or
+  when the project repo contains a figma-to-code-mapping folder with tokens.md and
   components.md.
-  Doel: MCP-codegen vanuit Figma matcht ≥90% met de bestaande codebase, doordat
-  tokens en componenten expliciet zijn gemapt op code-paden. Scope is mapping —
-  niet code-implementatie. Werkt voor elk project met een bestaande codebase plus
-  Figma als design-intent.
+  Goal: MCP code generation from Figma matches ≥90% with the existing codebase
+  because tokens and components are explicitly mapped to code paths. Scope is
+  mapping — not code implementation. Works for any project with an existing
+  codebase plus Figma as design intent.
 ---
 
 # Figma-to-Code
 
-Mapping-skill die ervoor zorgt dat Figma-MCP-codegen visueel én stylistisch matcht met de bestaande codebase. Drie expliciete documenten in de projectrepo: `tokens.md`, `components.md`, en per-component-specs in `components/<naam>.md`.
+Mapping skill that ensures Figma MCP code generation matches the existing codebase visually and stylistically. Per-component specs live **co-located next to the component file** (`<component-folder>/<name>.md` next to `<name>.tsx`); project-wide indexes in `docs/`.
 
-## Het doel
+## Vision
 
-**Mapping van tokens en componenten tussen Figma en code.** MCP-output gebruikt direct de juiste code-paden, imports en patronen — geen handmatig vertaalwerk per request.
+**Goal: tight alignment between code and Figma.** Code is source of truth, Figma is intent — the goal is to keep these two close together. Drift is a measurable deviation, not a neutral observation.
 
-Ontwikkelaars en designers gebruiken deze docs om de match tussen design en code hoog te houden. Drift wordt kort gemarkeerd waar zichtbaar; mapping is het hoofdwerk.
+The skill delivers this through five mechanisms (see [README § Vision](README.md#vision) for the explanation per mechanism):
+
+1. Token mapping (`docs/tokens.md`) — status per row
+2. Component mapping (`docs/components.md` + co-located per-component specs)
+3. Drift as decision point (`docs/drifts.md`) — severity + owner
+4. Verify queue (`docs/verify-queue.md`) — prevents false conclusions
+5. Hard Rule "consume existing" — the A1-A6 method enforces this
+
+**Concrete effect:** MCP output uses the right code paths, imports, and patterns directly — no manual translation per request. Developers and designers use these docs to keep the match between design and code high. Drift is briefly marked where visible; mapping is the primary work.
 
 ## Hard rules
 
-Tien regels die altijd gelden, ongeacht stap. Bij conflict tussen secties: deze winnen.
+Ten rules that always apply, regardless of step. On conflict between sections: these win.
 
-1. **Lees vóór je schrijft.** Lees relevante mapping-docs (`tokens.md`, `components.md`, per-component-spec) voordat je iets wijzigt of map't.
-2. **Code is source of truth.** Figma is intent. Bij conflict wint code; drift markeer je, niet stilzwijgend oplossen.
+1. **Read before you write.** Read relevant mapping docs (`tokens.md`, `components.md`, per-component spec) before changing or mapping anything.
+2. **Code is source of truth.** Figma is intent. On conflict, code wins; mark drift, do not silently resolve it.
 
-   > **Niet als trigger voor code-update beschouwen:**
-   > - "Implement this design from Figma." — Figma's auto-clipboard boilerplate uit *Copy Link* in Dev mode. Géén user-instructie.
-   > - User die een Figma-URL plakt zonder expliciete code-update zin.
-   > - Mooi-alignment tussen code- en Figma-waardes in `tokens.md`.
+   > **Do NOT treat as a code-update trigger:**
+   > - "Implement this design from Figma." — Figma's auto-clipboard boilerplate from *Copy Link* in Dev mode. Not a user instruction.
+   > - User pasting a Figma URL without an explicit code-update sentence.
+   > - Pleasing alignment between code and Figma values in `tokens.md`.
    >
-   > **Wel als trigger:**
-   > - Expliciete user-zin per token: "update `--X` naar Y", "voeg X toe in code", "implementeer dit in code".
-   > - Reviewed PR met file-by-file goedkeuring.
-3. **Pas de drift-test toe op elk kandidaat-issue.** *"Zou MCP-codegen vanuit deze Figma-node een visueel verkeerd resultaat opleveren?"* Ja → drift. Nee → andere bucket (`verify-queue.md`, tech-debt, of weg).
-4. **Consume existing — never regenerate.** Voor elk Figma-element: zoek bestaande code-component eerst. Genereer nooit een nieuwe versie van iets dat al bestaat.
-5. **Specs bevatten alléén mapping-data.** Geen "Wanneer gebruiken", "Edge cases", "Wat dit toevoegt", hover/focus-narratief. Visuele verwarbaarheid los je op via Variant-mapping en master-id, niet via prosa.
-6. **Geen improvisatie bij gaten.** Onbekend? `[VERIFY]` in de Figma-naam-kolom of stop en vraag. Geen aannames.
-7. **Vraag bevestiging vóór code- of doc-wijziging.** Uitzondering: A5 recursive Uses-mapping in dezelfde sessie — geen aparte permission per child-component.
-8. **Asset-handling: bestaand → MCP-localhost → nooit nieuw.** Project-assets hergebruiken; anders direct de localhost-URL uit MCP-payload. Geen nieuwe icoon-packages, geen placeholders.
-9. **`component-missing` — niet auto-genereren.** Markeer; ontwikkelaar maakt de code-component voordat mapping verder kan.
-10. **A6 validation-checklist verplicht aan einde van elke pass.** 7 punten (layout / typografie / kleuren / states / assets / literal strings / drift-test). Niet overslaan.
+   > **Do treat as a code-update trigger:**
+   > - Explicit user sentence per token: "update `--X` to Y", "add X in code", "implement this in code".
+   > - Reviewed PR with file-by-file approval.
+3. **Apply the drift test to every candidate issue.** *"Would MCP code generation from this Figma node produce a visually wrong result?"* Yes → drift. No → another bucket (`verify-queue.md`, tech debt, or discard).
+4. **Consume existing — never regenerate.** For every Figma element: search for an existing code component first. Never generate a new version of something that already exists.
+5. **Specs contain mapping data only.** No "When to use", "Edge cases", "What this adds", hover/focus narratives. Resolve visual confusability through Variant mapping and master-id, not through prose.
+6. **No improvising on gaps.** Unknown? `[VERIFY]` in the Figma-name column or stop and ask. No assumptions.
+7. **Ask for confirmation before code or doc changes.** Exception: A5 recursive Uses mapping in the same session — no separate permission per child component.
+8. **Asset handling: existing → MCP-localhost → never new.** Reuse project assets; otherwise use the localhost URL directly from the MCP payload. No new icon packages, no placeholders.
+9. **`component-missing` — do not auto-generate.** Mark it; the developer creates the code component before mapping continues.
+10. **A6 validation checklist mandatory at end of every pass.** 7 checks (layout / typography / colors / states / assets / literal strings / drift test). Do not skip.
 
-## Skill-boundary
+## Skill boundary
 
-Wanneer wel, wanneer niet, en waar dan wel naartoe.
+When yes, when no, and where to go instead.
 
-| Scenario | Deze skill? | Anders: |
+| Scenario | This skill? | Otherwise: |
 |---|---|---|
-| Figma-frame mappen naar bestaande code (1 component) | ✅ ja | — |
-| Figma-frame mappen naar bestaande code (volledige pagina) | ✅ ja, recursief via A5 (organisms → molecules → atoms van die pagina) | — |
-| Tokens/components/specs bijwerken in bestaand mapping-project | ✅ ja | — |
-| Drift detecteren tussen Figma en bestaande code | ✅ ja, als bijproduct van mapping | — |
-| Figma-frame **implementeren als werkende code** | ❌ nee | Buiten scope. Deze skill bouwt alléén de mapping; code-generatie is downstream-werk en hoort in een aparte skill |
-| Hele pagina **vanuit een tekstbeschrijving** bouwen (geen Figma-input) | ❌ nee | `figma-generate-design` of `frontend-design` (greenfield) |
-| Figma-bestand **schrijven** (nodes maken, variabelen aanmaken) | ❌ nee | `figma-use` |
-| Code Connect-mappings (`.figma.ts`) maken | ❌ nee | `figma-code-connect` |
-| Een design-system bouwen in Figma vanuit code | ❌ nee | `figma-generate-library` |
-| AI-rules schrijven voor een project (CLAUDE.md / AGENTS.md) | ❌ nee | `figma-create-design-system-rules` |
+| Map Figma frame to existing code (1 component) | ✅ yes | — |
+| Map Figma frame to existing code (full page) | ✅ yes, recursively via A5 (organisms → molecules → atoms of that page) | — |
+| Update tokens/components/specs in existing mapping project | ✅ yes | — |
+| Detect drift between Figma and existing code | ✅ yes, as a byproduct of mapping | — |
+| **Implement** Figma frame as working code | ❌ no | Out of scope. This skill builds the mapping only; code generation is downstream work and belongs in a separate skill |
+| Build a full page **from a text description** (no Figma input) | ❌ no | `figma-generate-design` or `frontend-design` (greenfield) |
+| **Write to** the Figma file (create nodes, define variables) | ❌ no | `figma-use` |
+| Create Code Connect mappings (`.figma.ts`) | ❌ no | `figma-code-connect` |
+| Build a design system in Figma from code | ❌ no | `figma-generate-library` |
+| Write AI rules for a project (CLAUDE.md / AGENTS.md) | ❌ no | `figma-create-design-system-rules` |
 
-**Volledige pagina nuance.** Onze skill werkt voor pagina-Figma-frames net zo goed als voor losse componenten — input is in beide gevallen een Figma-node. Het verschil met `figma-generate-design` zit in de input-vorm: wij hebben Figma-pixels nodig, zij accepteren tekst-briefings. Voor een pagina draaien we A1–A6 recursief, één organism per keer, totdat alle children gemapt zijn.
+**Full-page nuance.** This skill works for page-level Figma frames just as well as for individual components — the input is a Figma node either way. The difference with `figma-generate-design` lies in the input form: we need Figma pixels; they accept text briefings. For a page we run A1–A6 recursively, one organism at a time, until all children are mapped.
 
-**Wat dit niet is:**
-- Geen design-system-documentatie-tool — doel is mapping, geen complete design-laag bouwen.
-- Geen drift-detectie als hoofdfunctie — drift wordt kort gemarkeerd; mapping is het primaire werk.
-- Geen vervanging voor Figma Code Connect — waar Code Connect bestaat, doet die de mapping automatisch.
-- Geen documentatie van gedrag — hover, focus, motion, keyboard-handling leven in code.
+**What this is not:**
+- Not a design-system documentation tool — the goal is mapping, not building a complete design layer.
+- Not drift detection as primary function — drift is briefly marked; mapping is the primary work.
+- Not a replacement for Figma Code Connect — where Code Connect exists, it handles the mapping automatically. This skill complements it by adding a drift loop on top.
+- Not behavior documentation — hover, focus, motion, keyboard handling live in code.
 
-## Slash-commando's
+## Slash commands
 
-- `/figma-to-code setup` — vraag bevestiging, dan `docs/`-structuur aanmaken in projectrepo
-- `/figma-to-code map <component>` — start mapping van die component (volledige A1-A6)
-- `/figma-to-code init-claude-md` — toon markdown-blok om in projectrepo CLAUDE.md te plakken
+- `/figma-to-code setup` — ask for confirmation, then create the `docs/` structure in the project repo
+- `/figma-to-code map <component>` — start mapping that component (full A1-A6)
+- `/figma-to-code init-claude-md` — show a markdown block to paste into the project CLAUDE.md
 
-## Bron-verdeling
+## Source-of-truth allocation
 
-**Figma is intentie.** Wat moet er komen, welke schermen, welke nieuwe componenten.
+**Figma is intent.** What needs to come, which screens, which new components.
 
-**Code is waarheid.** Welke tokens en componenten bestaan, met welke waardes.
+**Code is truth.** Which tokens and components exist, with which values.
 
-Bij conflict wint code. Drift markeer je expliciet, niet stilzwijgend oplossen.
+On conflict, code wins. Mark drift explicitly; do not silently resolve it.
 
-## Bron-mechanisme
+## Source mechanism
 
-### Cache + hash-check
+### Cache + hash check
 
-**Cache is de werkende laag.** Map vanuit een lokale cache van Figma-node-data. Conventie: `figma-context/<node-id>.json`, één bestand per node. Mapping leest uit de cache, niet rechtstreeks uit Figma.
+**Cache is the working layer.** Map from a local cache of Figma node data. Convention: `figma-context/<node-id>.json`, one file per node. Mapping reads from the cache, not directly from Figma.
 
-**Cache-format met spec-link.** Elk cache-bestand bevat metadata over de gekoppelde code-component en de laatste sync-status:
+**Cache format with spec link.** Each cache file contains metadata about the linked code component and the latest sync status:
 
 ```json
 {
@@ -106,302 +114,310 @@ Bij conflict wint code. Drift markeer je expliciet, niet stilzwijgend oplossen.
 }
 ```
 
-**Hash-check bij elke pass.** Hash de huidige code-bestanden, vergelijk met `spec_synced_with_files_hash`. Bij verschil: spec is out-of-sync sinds code-wijziging. Voorkomt dat je werkt met verouderde mappings.
+**Hash check on every pass.** Hash the current code files, compare with `spec_synced_with_files_hash`. On mismatch: spec is out of sync since a code change. Prevents working with outdated mappings.
 
-### MCP-tools en fallbacks
+### MCP tools and fallbacks
 
-**MCP is het verversmechanisme.** Bij elke mapping-pass: live MCP-fetch, vergelijk met cache, schrijf nieuwste versie weg, map vanuit de bijgewerkte cache.
+**MCP is the refresh mechanism.** On every mapping pass: live MCP fetch, compare with cache, write the latest version, map from the updated cache.
 
-**Twee gangbare Figma-MCP-servers.** Je omgeving kan een of beide hebben — gedrag verschilt:
+**Two common Figma MCP servers.** Your environment may have one or both — behavior differs:
 
-| MCP-server | Werkt op | Desktop-tab vereist? | Heeft `excludeScreenshot`? |
+| MCP server | Operates on | Desktop tab required? | Has `excludeScreenshot`? |
 |---|---|---|---|
-| Desktop-active MCP (bv. `mcp__Figma__*`) | `nodeId` (huidige actieve tab) | ✅ ja | ❌ nee — alleen `forceCode` |
-| FileKey-based MCP (bv. `mcp__2741e7c0-...`) | `nodeId` + `fileKey` | ❌ nee | ✅ ja |
+| Desktop-active MCP (e.g. `mcp__Figma__*`) | `nodeId` (current active tab) | ✅ yes | ❌ no — only `forceCode` |
+| FileKey-based MCP (e.g. `mcp__2741e7c0-...`) | `nodeId` + `fileKey` | ❌ no | ✅ yes |
 
-Voor batch-mapping (meerdere componenten op één file) is fileKey-based sneller — je hoeft Figma desktop niet open te hebben met de juiste tab. Voor "ik staar nu naar dit element en wil het mappen" is desktop-active natuurlijker.
+For batch mapping (multiple components on one file) the fileKey-based variant is faster — you don't need Figma desktop open on the right tab. For "I'm staring at this element and want to map it" the desktop-active variant is more natural.
 
-**Wat returnt welke tool — kies de juiste:**
+**Which tool returns what — pick the right one:**
 
-| Tool | Wat | Wanneer |
+| Tool | What | When |
 |---|---|---|
-| `get_variable_defs` | Alleen var-bound waardes (kleuren, fonts, dimensies via Figma-variabelen) | Token-level mapping (`tokens.md`) |
-| `get_design_context` | Volledige rendering inclusief hardcoded waardes (Tailwind classes met inline pixels zoals `px-[20px]`, `h-[38px]`) | Component-spec mapping (paddings/gaps die niet via vars lopen) |
-| `get_metadata` | Tree-structuur, geen waardes | Navigatie + child-discovery |
-| `get_screenshot` | PNG/JPEG visual | Sanity-check; niet primair voor mapping |
+| `get_variable_defs` | Only var-bound values (colors, fonts, dimensions via Figma variables) | Token-level mapping (`tokens.md`) |
+| `get_design_context` | Full rendering including hardcoded values (Tailwind classes with inline pixels like `px-[20px]`, `h-[38px]`) | Component-spec mapping (paddings/gaps not flowing through vars) |
+| `get_metadata` | Tree structure, no values | Navigation + child discovery |
+| `get_screenshot` | PNG/JPEG visual | Sanity check; not primary for mapping |
 
-**Selection-based MCP zonder node-id.** Wanneer Figma desktop open is met een node geselecteerd én de MCP-tool ondersteunt selectie-fallback (`get_design_context` zonder `nodeId`): gebruik dat. Wel: leg de uiteindelijk gefetchte node-id altijd vast in spec en cache, zodat de mapping reproduceerbaar is. Geen anonieme "current selection"-mappings.
+**Selection-based MCP without node-id.** When Figma desktop is open with a node selected and the MCP tool supports selection fallback (`get_design_context` without `nodeId`): use it. But: always record the eventually fetched node-id in spec and cache so the mapping is reproducible. No anonymous "current selection" mappings.
 
-**Mapping zonder actieve MCP** kan, mits cache aanwezig is — noteer dan `cache_verified_via_mcp: false` in het cache-bestand met reden.
+**Mapping without active MCP** is possible if a cache is present — note `cache_verified_via_mcp: false` in the cache file with reason.
 
-**Master-verificatie via instance-id-format.** Wanneer een master-page niet direct bereikbaar is via MCP (master ligt op andere page), maar instances ervan wél bereikbaar zijn via een ander frame: het instance-id-format `I<frame-id>;<master-id>` is voldoende bewijs voor master-id-verificatie. Master-cache is niet vereist — instance-rendering binnen een geverifieerd frame levert alle mapping-data die voor MCP-codegen nodig is. Documenteer in cache-bestand: `master_verified_via: "instance-id-format"`.
+**Master verification via instance-id format.** When a master page is not directly reachable via MCP (master lives on another page) but instances of it are reachable through another frame: the instance-id format `I<frame-id>;<master-id>` is sufficient evidence for master-id verification. Master cache is not required — instance rendering within a verified frame provides all mapping data needed for MCP code generation. Document in cache file: `master_verified_via: "instance-id-format"`.
 
-### Asset-handling (SVG, images, icons)
+### Asset handling (SVG, images, icons)
 
-MCP-output bevat asset-URLs in twee vormen, afhankelijk van de MCP-server:
+MCP output contains asset URLs in two forms, depending on the MCP server:
 
-- **Desktop-active MCP:** `http://localhost:3845/assets/<hash>.svg` — lokale Figma-server, beschikbaar zolang de desktop-app draait.
-- **FileKey-based MCP:** `https://www.figma.com/api/mcp/asset/<uuid>` — remote, **7-dagen expiratie**. Voor langer-houdbare mapping: download eenmalig naar project en map daarheen.
+- **Desktop-active MCP:** `http://localhost:3845/assets/<hash>.svg` — local Figma server, available while the desktop app runs.
+- **FileKey-based MCP:** `https://www.figma.com/api/mcp/asset/<uuid>` — remote, **7-day expiry**. For longer-lived mapping: download once into the project and map there.
 
-Drie regels gelden voor beide URL-formats:
+Three rules apply to both URL formats:
 
-1. **Bestaande asset zoeken eerst.** Als de codebase al een asset heeft die deze Figma-asset representeert (bv. `images/icons/ui/close.svg?react` voor close-icoon), gebruik die. Map in de spec onder de mapping-tabel: `Icon-source | images/icons/ui/close.svg?react | lokale SVG-import`.
-2. **Geen nieuwe icoonpackages installeren.** Geen `npm install lucide-react`, geen `@mui/icons-material`-import "voor de zekerheid". Alle assets komen óf uit bestaande project-assets, óf direct uit de Figma MCP-payload-URL.
-3. **Geen placeholders.** Wanneer MCP een asset-URL teruggeeft: gebruik die direct, of download het asset eenmalig naar de project-conventie-locatie en map daarheen. Nooit een placeholder of TODO-comment achterlaten.
+1. **Search for existing assets first.** If the codebase already has an asset that represents this Figma asset (e.g. `images/icons/ui/close.svg?react` for a close icon), use it. Map in the spec under the mapping table: `Icon-source | images/icons/ui/close.svg?react | local SVG import`.
+2. **Do not install new icon packages.** No `npm install lucide-react`, no `@mui/icons-material` import "just in case". All assets come from existing project assets or directly from the Figma MCP payload URL.
+3. **No placeholders.** When MCP returns an asset URL: use it directly, or download the asset once to the project's convention location and map there. Never leave a placeholder or TODO comment.
 
-Wanneer een Figma-asset niet in code bestaat én niet uit MCP komt: stop, vraag de gebruiker. Niet improviseren met een lookalike.
+When a Figma asset is neither in code nor coming from MCP: stop and ask the user. Do not improvise with a lookalike.
 
-## De documenten
+## The documents
 
-| Document | Doel |
+| Document | Location | Purpose |
+|---|---|---|
+| `tokens.md` | `docs/` | Three-column mapping (Figma name → code path → value) |
+| `components.md` | `docs/` | Index with Uses column and atomic-design classification |
+| `<name>.md` (atom/molecule/organism) | **next to `<name>.tsx`** in the same folder | Per component: spec, props, states, mapping to Figma |
+| `<name>.md` (template) | **next to `page.tsx`** in the same route folder | Page-level mapping |
+| `drifts.md` | `docs/` | Central drift aggregator (drift-test passers only) |
+| `verify-queue.md` | `docs/` | `[VERIFY]` items for the next live MCP session |
+
+**Co-location convention:** per-component specs live next to the component they document — not in a separate `docs/components/` folder. Benefit: on refactor/rename the spec automatically moves along, and code review sees immediately whether the spec was updated. Project-wide indexes (`tokens.md`, `components.md`, `drifts.md`, `verify-queue.md`) stay in `docs/`.
+
+Templates live in `templates/`. The `setup` command copies them into the project repo.
+
+## What to read when
+
+| Task | Read first |
 |---|---|
-| `docs/tokens.md` | Driekoppige mapping (Figma-naam → code-pad → waarde) |
-| `docs/components.md` | Index met Uses-kolom en atomic-design classificatie |
-| `docs/components/<naam>.md` | Per component: spec, props, states, mapping naar Figma |
-| `docs/drifts.md` | Centrale drift-aggregatie (alleen drift-test-passers) |
-| `docs/verify-queue.md` | `[VERIFY]`-items voor volgende live-MCP-sessie |
+| Check or add token value | `tokens.md` |
+| Build or use component | `components.md`, relevant `<component-folder>/<name>.md` |
+| Map Figma frame to code | `components.md`, involved specs; refresh `figma-context/<node-id>.json` via MCP when available |
+| Make drift decision | `drifts.md` (existing), spec of the involved component, `verify-queue.md` |
+| Encounter unknown Figma name | `verify-queue.md` (possibly already known), otherwise add a new `[VERIFY]` item |
 
-Templates staan in `templates/`. Bij `setup`-commando worden ze gekopieerd naar de projectrepo.
+## Component selection
 
-## Wat lees je wanneer
+Two rules that work together (Hard rule #4 + atomic order):
 
-| Taak | Lees eerst |
-|---|---|
-| Token-waarde controleren of toevoegen | `tokens.md` |
-| Component bouwen of gebruiken | `components.md`, relevante `components/<naam>.md` |
-| Figma-frame mappen naar code | `components.md`, betrokken specs; refresh `figma-context/<node-id>.json` via MCP wanneer beschikbaar |
-| Drift-besluit nemen | `drifts.md` (bestaande), spec van betrokken component, `verify-queue.md` |
-| Onbekende Figma-naam tegenkomen | `verify-queue.md` (mogelijk al bekend), anders nieuw `[VERIFY]`-item toevoegen |
+**1. Consume existing — never regenerate.** For every Figma element: first search whether a matching code component exists (via `components.md`, a `src/components/` scan, or Code Connect). If yes: import and use. Never generate a new version — a deviating use is either a prop choice, drift, or a legitimate reason to extend the existing component.
 
-## Selectie van componenten
+**2. Organism first, then molecules, then atoms.** When several valid code components could match: pick the highest atomic level that fits. Do not combine loose atoms when a molecule or organism already does the job.
 
-Twee regels die samen werken (Hard rule #4 + atomic-volgorde):
+- **Atom** — indivisible (Button, Input, Icon, Badge)
+- **Molecule** — composition of atoms with one shared purpose
+- **Organism** — has its own state, scroll behavior, or keyboard handling
 
-**1. Consume existing — never regenerate.** Voor elk Figma-element: zoek eerst of er een matchend code-component bestaat (via `components.md`, `src/components/`-scan, of Code Connect). Als ja: import en gebruik. Genereer nooit een nieuwe versie — een afwijkend gebruik is óf een prop-keuze, óf drift, óf legitieme reden voor uitbreiding van het bestaande component.
+When in doubt: pick the lower level. On complete absence of a matching component → `component-missing` drift, do not auto-generate (Hard rule #9).
 
-**2. Organism eerst, dan molecules, dan atoms.** Wanneer er meerdere geldige code-componenten kunnen matchen: kies het hoogste atomic-level dat past. Combineer geen losse atoms als er al een molecule of organism het werk doet.
+## Drift — short and pragmatic
 
-- **Atom** — onsplitsbaar (Button, Input, Icon, Badge)
-- **Molecule** — samenstelling van atoms met één gedeeld doel
-- **Organism** — eigen state, scroll-gedrag, of keyboard-handling
+Mark drift in the spec where it belongs, not as a separate process. Three types:
 
-Bij twijfel: kies het lagere niveau. Bij volledige afwezigheid van een matchend component → `component-missing` drift, niet auto-genereren (Hard rule #9).
+- **`value-mismatch`** — Code rendered output ≠ Figma. Fix at call site.
+- **`token-mismatch`** — Token value in `theme/tokens.ts` ≠ Figma. Fix in theme.
+- **`component-missing`** — Figma element without a code component. Mark it; agent does not auto-generate, developer creates the component.
 
-## Drift — kort en pragmatisch
-
-Drift markeer je in de spec waar 'ie hoort, niet als apart proces. Drie types:
-
-- **`value-mismatch`** — Code rendered output ≠ Figma. Fix op call-site.
-- **`token-mismatch`** — Token-waarde in `theme/tokens.ts` ≠ Figma. Fix in theme.
-- **`component-missing`** — Figma-element zonder code-component. Markeer; agent niet auto-genereren, ontwikkelaar maakt component.
-
-Format: één regel per drift in de "Drift-aandachtspunten"-sectie van de spec.
+Format: one line per drift in the "Drift notes" section of the spec.
 
 ```
-- <type> [Severity][Owner] — <bestand:regel> <wat verschilt>. Actie: <wat te doen>.
+- <type> [Severity][Owner] — <file:line> <what differs>. Action: <what to do>.
 ```
 
-### Severity — heuristiek
+### Severity — heuristic
 
-Categorie-niveau, niet hardgecodeerde drempels. Concrete numerieke drempels (bv. "5% lightness delta", "2px spacing delta") legt elk project zelf vast in z'n eigen CLAUDE.md indien gewenst.
+Category level, not hardcoded thresholds. Concrete numeric thresholds (e.g. "5% lightness delta", "2px spacing delta") each project records itself in its own CLAUDE.md if desired.
 
 | Severity | Trigger |
 |---|---|
-| **Critical** | System-wide impact (font-family, primary color, base radius). Of: state-mechanisme verschilt fundamenteel (overlay vs opacity-shift). Of: code-API mismatch (variant ontbreekt waar Figma 'm als type heeft). |
-| **Major** | Visueel detecteerbaar bij side-by-side vergelijking. Of: code-missing variant die in Figma als Type-enum bestaat. Of: figma-missing semantic alias die code in meerdere components gebruikt. |
-| **Minor** | Onder visible threshold. Naming-typo's. Cosmetisch verschil zonder render-impact. Tech-debt-grens (maar tech-debt zelf is geen drift — zie drift-test). |
+| **Critical** | System-wide impact (font family, primary color, base radius). Or: state mechanism differs fundamentally (overlay vs opacity shift). Or: code-API mismatch (variant missing where Figma has it as a type). |
+| **Major** | Visually detectable on side-by-side comparison. Or: code-missing variant existing as Type enum in Figma. Or: figma-missing semantic alias used by code in multiple components. |
+| **Minor** | Below visible threshold. Naming typos. Cosmetic difference without render impact. Tech-debt boundary (but tech debt itself is not drift — see drift test). |
 
-### Drift-test (gebruik bij elk kandidaat-drift)
+### Drift test (apply to every drift candidate)
 
-Eén vraag, altijd: **"Zou MCP-codegen vanuit deze Figma-node een visueel verkeerd resultaat opleveren?"**
+One question, always: **"Would MCP code generation from this Figma node produce a visually wrong result?"**
 
-- **Ja** → drift, in `drifts.md` + spec.
-- **Nee** → andere bucket:
-  - `verify-queue.md` — `[VERIFY]`-items voor volgende sessie met live MCP (ongeverifieerde masters, ongelokaliseerde overrides, gederiveerde data zonder bron-check).
-  - **Tech-debt** — hardcoded-met-correcte-waarde, tokenization-kandidaten, dead code → niet in mapping-docs, hoort in code-review of issue-tracker.
-  - **Mapping-doc-fix** — `tokens.md` of `components.md` was foutief gedocumenteerd → fix direct in dat doc, geen drift-rij.
+- **Yes** → drift, in `drifts.md` + spec.
+- **No** → another bucket:
+  - `verify-queue.md` — `[VERIFY]` items for the next live-MCP session (unverified masters, unlocated overrides, derived data without source check).
+  - **Tech debt** — hardcoded-with-correct-value, tokenization candidates, dead code → not in mapping docs, belongs in code review or issue tracker.
+  - **Mapping-doc fix** — `tokens.md` or `components.md` was incorrectly documented → fix directly in that doc, no drift row.
 
-Drift gaat over visuele/structurele mapping. NIET over: tekst-content/copy, hardcoded-met-zelfde-waarde (tech-debt), code-bugs, auto-layout container-properties zonder token-binding, ongeverifieerde masters (die horen in `verify-queue.md`), of `figma-master-missing` voor code-only abstracties (administratief, geen drift).
+Drift is about visual/structural mapping. NOT about: text content/copy, hardcoded-with-same-value (tech debt), code bugs, auto-layout container properties without token binding, unverified masters (those go in `verify-queue.md`), or `figma-master-missing` for code-only abstractions (administrative, not drift).
 
-## Werkwijze A1-A6
+## Method A1-A6
 
-### A1. Inventariseer
+### A1. Inventory
 
-Scan de bestaande codebase. Identificeer:
-- Waar tokens leven (CSS variables, theme-object, Tailwind config, mix)
-- Welke component-folders er zijn (`src/components/ui/`, etc.)
-- Welk format styles gebruikt (CSS modules, Emotion, styled-components, etc.)
+Scan the existing codebase. Identify:
+- Where tokens live (CSS variables, theme object, Tailwind config, mix)
+- Which component folders exist (`src/components/ui/`, etc.)
+- Which format styles use (CSS modules, Emotion, styled-components, etc.)
 
-Geef de gebruiker een korte samenvatting voor je doorgaat.
+Give the user a short summary before continuing.
 
-### A2. Vul tokens.md (incrementeel)
+### A2. Fill tokens.md (incrementally)
 
-Documenteer alleen tokens die het eerste component raakt. Volgende componenten breiden de tabellen uit.
+Document only tokens that the first component touches. Subsequent components extend the tables.
 
-> **Watch out — twee parallelle scales.** Sommige Figma-kits (vooral Tailwind-mirror kits zoals shadcn-derivaten) hebben twee parallelle scales met overlappende prefix-namen: een **semantic scale** (`radius-md`, `radius-lg` voor component-design) naast een **utility scale** (`rounded-md`, `rounded-xl` als Tailwind-class mirrors). Verifieer in `tokens.md` welke scale een component daadwerkelijk gebruikt. Documenteer expliciet welke per categorie om verwarring te voorkomen.
+> **Watch out — two parallel scales.** Some Figma kits (especially Tailwind-mirror kits like shadcn derivatives) have two parallel scales with overlapping prefix names: a **semantic scale** (`radius-md`, `radius-lg` for component design) next to a **utility scale** (`rounded-md`, `rounded-xl` as Tailwind class mirrors). Verify in `tokens.md` which scale a component actually uses. Document explicitly per category to prevent confusion.
 
-Per token een rij met:
-- Code-pad (hoe je het in components gebruikt)
-- Figma-naam (zoals het in Figma als variabele bestaat) of `[VERIFY]` indien onbevestigd
-- Waarde
-- Gebruik (korte uitleg)
+One row per token with:
+- Code path (how you use it in components)
+- Figma name (as it exists in Figma as a variable) or `[VERIFY]` if unconfirmed
+- Value
+- Use (short explanation)
 
-### A3. Documenteer eerste component
+### A3. Document the first component
 
-Kies samen met de gebruiker één representatieve component. Voor dat component:
+Choose one representative component together with the user. For that component:
 
-1. Lees de implementatie (component-file, styles-file, types-file)
-2. Lees de wrapper-laag indien aanwezig
-3. Vul `docs/components/<naam>.md` op basis van `templates/component-spec.md`
-4. Voeg toe aan `components.md` met Uses-kolom
+1. Read the implementation (component file, styles file, types file)
+2. Read the wrapper layer if present
+3. Fill `<component-folder>/<name>.md` based on `templates/component-spec.md`
+4. Add to `components.md` with Uses column
 
-#### Anti-pattern: mixed-axis Type-enum in Figma
+#### Anti-pattern: mixed-axis Type enum in Figma
 
-Figma-kits collapsen vaak orthogonale assen in één `Type=` enum. Voorbeeld Button met 14 waardes:
-- `primary`, `secondary` → color-axis
-- `Size-small`, `Size-default`, `Size-large` → size-axis
-- `Rounded` → shape-axis
-- `loading` → state-axis
-- `with icon`, `with icon right` → composition-axis (children-volgorde)
-- `Button group` → composition-axis (parent-component)
+Figma kits often collapse orthogonal axes into one `Type=` enum. Example Button with 14 values:
+- `primary`, `secondary` → color axis
+- `Size-small`, `Size-default`, `Size-large` → size axis
+- `Rounded` → shape axis
+- `loading` → state axis
+- `with icon`, `with icon right` → composition axis (children order)
+- `Button group` → composition axis (parent component)
 
-In code zijn dit typisch 5+ aparte assen (`variant` × `size` × `className` × `children-order` × `parent-wrapper`).
+In code these are typically 5+ separate axes (`variant` × `size` × `className` × `children-order` × `parent-wrapper`).
 
-**Mapping-strategie:**
-1. Categoriseer elke Figma `Type=` waarde naar zijn axis (color / size / shape / state / composition).
-2. Map per-axis in de Variant-mapping tabel:
+**Mapping strategy:**
+1. Categorize each Figma `Type=` value by its axis (color / size / shape / state / composition).
+2. Map per axis in the Variant mapping table:
    - color-Type → code `variant` prop
    - size-Type → code `size` prop
    - shape-Type → code className tweak
    - state-Type → code composition (e.g. `disabled` + child)
-   - composition-Type → code parent-wrapper of children-volgorde
-3. Documenteer de decompositie expliciet in `components/<naam>.md` zodat MCP-codegen weet welke Figma-Type-waarde naar welke code-prop matcht.
+   - composition-Type → code parent wrapper or children order
+3. Document the decomposition explicitly in `<component-folder>/<name>.md` so MCP code generation knows which Figma `Type=` value maps to which code prop.
 
-### A4. Mapping aan Figma
+### A4. Mapping to Figma
 
-Per element: haal node-data op via cache (refresh via MCP), lees de code, en stel een mapping voor (Figma-property → code-token of code-pad). Gebruiker bevestigt. Bij twijfel: `[VERIFY]` in de Figma-naam-kolom, niet improviseren.
+Per element: fetch node data via cache (refresh via MCP), read the code, and propose a mapping (Figma property → code token or code path). User confirms. On doubt: `[VERIFY]` in the Figma-name column, do not improvise.
 
-> **Waarschuwing — variable-scope.** `get_variable_defs(nodeId)` returnt **alleen variabelen die deze specifieke node consumeert**. Vars die file-level bestaan maar door deze node niet gebruikt worden, komen niet terug. Voor `figma-missing` conclusies in `tokens.md`: query minimaal 3 component-pages uit verschillende categorieën (knoppen / cards / forms / feedback) voordat je de gap definitief markeert. Een single-node-pass produceert vals-positieve `figma-missing` flags die latere passes moeten retracten.
+> **Warning — variable scope.** `get_variable_defs(nodeId)` returns **only variables this specific node consumes**. Vars that exist file-level but are not used by this node do not come back. For `figma-missing` conclusions in `tokens.md`: query at least 3 component pages from different categories (buttons / cards / forms / feedback) before marking the gap definitively. A single-node pass produces false-positive `figma-missing` flags that later passes have to retract.
 
-#### A4a. MCP-fetch volgorde bij grote/complexe nodes
+#### A4a. MCP fetch order for large/complex nodes
 
-1. `get_design_context(nodeId)` — directe haal.
-2. **Bij timeout of "te complex"-respons: payload-reductie eerst, vóór splitsen.** MCP-servers ondersteunen verschillende parameters — gebruik wat jouw server heeft:
-   - `excludeScreenshot: true` — onderdrukt de screenshot-render, vaak de duurste stap (beschikbaar op fileKey-based MCP, niet op alle desktop-active MCPs)
-   - `forceCode: true` — dwingt code-output ook bij truncation-risico (beschikbaar op beide gangbare Figma-MCPs)
+1. `get_design_context(nodeId)` — direct fetch.
+2. **On timeout or "too complex" response: payload reduction first, before splitting.** MCP servers support different parameters — use what your server has:
+   - `excludeScreenshot: true` — suppresses the screenshot render, often the most expensive step (available on fileKey-based MCP, not on all desktop-active MCPs)
+   - `forceCode: true` — forces code output even on truncation risk (available on both common Figma MCPs)
 
-   Een retry met payload-reductie is goedkoper dan direct splitsen via metadata.
-3. **Bij blijvende truncatie of timeout:** `get_metadata(nodeId)` voor de child-tree.
-4. Identificeer de relevante child-nodes uit de metadata-XML.
-5. Loop door en `get_design_context(<childId>)` per relevante child (eventueel met payload-reductie); assembleer het beeld.
+   A retry with payload reduction is cheaper than splitting via metadata directly.
+3. **On persistent truncation or timeout:** `get_metadata(nodeId)` for the child tree.
+4. Identify the relevant child nodes from the metadata XML.
+5. Loop through and `get_design_context(<childId>)` per relevant child (with payload reduction if needed); assemble the picture.
 
-Niet improviseren als de eerste fetch onvolledig is — altijd via payload-reductie of metadata splitsen voordat je verder map't.
+Do not improvise when the first fetch is incomplete — always go via payload reduction or metadata splitting before mapping further.
 
-#### A4b. Verplichte vergelijking per hardcoded waarde
+#### A4b. Mandatory comparison per hardcoded value
 
-Voor elke hardcoded waarde in code (padding, border-radius, height, etc.) direct vergelijken met de Figma-instance-waarde uit MCP-output. Niet alleen "code-waarde + token" noteren — pas expliciet de drift-test toe (Hard rule #3): matcht de Figma-rendered output? Bij verschil: drift in spec + `drifts.md`, niet pas in re-validatie. **Drift-detectie hoort bij A4, niet later.**
+For every hardcoded value in code (padding, border-radius, height, etc.) compare directly with the Figma instance value from MCP output. Do not just note "code value + token" — explicitly apply the drift test (Hard rule #3): does it match the Figma rendered output? On difference: drift in spec + `drifts.md`, not only in re-validation. **Drift detection belongs to A4, not later.**
 
-#### A4c. Literal strings zijn ook mapping
+#### A4c. Literal strings are mapping too
 
-Component-specifieke strings die in code geëmit worden — `aria-label`, `alt`, `placeholder`, `title`-attributen — zijn mapping-data, geen gedrag. Map ze net als tokens: code-waarde + Figma-bron. Voorkomt dat MCP-codegen een generieke `aria-label="Close"` produceert in plaats van het bestaande `"Sluit venster"`. Niet alle a11y-aspecten zijn mapping (focus-traps, keyboard-navigatie zijn gedrag) — wel deze literale strings.
+Component-specific strings emitted in code — `aria-label`, `alt`, `placeholder`, `title` attributes — are mapping data, not behavior. Map them like tokens: code value + Figma source. Prevents MCP code generation from producing a generic `aria-label="Close"` instead of the existing `"Sluit venster"`. Not all a11y aspects are mapping (focus traps, keyboard navigation are behavior) — but these literal strings are.
 
-#### A4d. State-symbols apart queryen van default-symbols
+#### A4d. Query state symbols separately from default symbols
 
-Voor elke variant met een `State=` enum in Figma (hover, focus, active, disabled): query de state-symbol(s) **los van** het default-symbol.
+For every variant with a `State=` enum in Figma (hover, focus, active, disabled): query the state symbol(s) **separately from** the default symbol.
 
-Page-level `get_variable_defs(parent-frame)` aggregeert vars over alle child-nodes — dat verbergt welke variant welke variabele consumeert. Conclusies over state-mechanisme op aggregated data zijn structureel fragiel: ze leiden tot foutieve drifts of verkeerde hover/active-mappings die volgende passes moeten corrigeren.
+Page-level `get_variable_defs(parent-frame)` aggregates vars over all child nodes — that hides which variant consumes which variable. Conclusions about state mechanism on aggregated data are structurally fragile: they lead to incorrect drifts or wrong hover/active mappings that subsequent passes have to correct.
 
-Werkwijze:
-1. `get_variable_defs(default-symbol-id)` — toont default-tokens.
-2. `get_variable_defs(state-symbol-id)` — toont of de state een andere kleur of mechanisme gebruikt.
-3. Diff de resultaten. Andere vars in state = mechanisme wijkt af (bv. color-shift naar ander var, i.p.v. opacity-reduction op zelfde var).
+Method:
+1. `get_variable_defs(default-symbol-id)` — shows default tokens.
+2. `get_variable_defs(state-symbol-id)` — shows whether the state uses a different color or mechanism.
+3. Diff the results. Different vars in state = mechanism deviates (e.g. color shift to a different var instead of opacity reduction on the same var).
 
-Documenteer per variant in `components/<naam>.md` (Variant-mapping subsectie) welk state-mechanisme actief is.
+Document per variant in `<component-folder>/<name>.md` (Variant-mapping subsection) which state mechanism is active.
 
-### A5. Recursief Uses afmaken (zonder aparte permission-vraag)
+### A5. Finish Uses recursively (no separate permission ask)
 
-Na elke component-mapping: scan de Uses-kolom van de zojuist gemapte component. Voor elke nog-niet-gemapte **interne** Use: ga direct door met mappen — onderdeel van het completeren van de oorspronkelijke component, geen aparte pass.
+After every component mapping: scan the Uses column of the just-mapped component. For every not-yet-mapped **internal** Use: continue mapping immediately — part of completing the original component, not a separate pass.
 
-- Agent meldt vooraf: *"Ik map nu X, daarna automatisch ook Y en Z (Uses van X)."*
-- Geen aparte permission-vraag per child-component (uitzondering op Hard rule #7)
-- Wel bevestiging vragen bij wijzigingen in code/docs (Hard rule #7 blijft)
+- Agent announces in advance: *"I'll map X now, then automatically also Y and Z (Uses of X)."*
+- No separate permission ask per child component (exception to Hard rule #7)
+- Still ask confirmation on changes to code/docs (Hard rule #7 still applies)
 
-**Stop-grens:** externe libraries (MUI, react-modal, framework-componenten) worden niet gemapt. Ze worden in de spec genoemd onder "Compositie" of "Voorbeeld", maar krijgen geen eigen spec.
+**Stop boundary:** external libraries (MUI, react-modal, framework components) are not mapped. They are mentioned in the spec under "Composition" or "Example", but get no spec of their own.
 
-**Voorbeeld:** als `ConfirmationModal` Uses = `Modal, Button, SecondaryButton`, worden alle drie gemapt in dezelfde sessie. `Modal` op zijn beurt gebruikt `react-modal` extern — daar stopt de keten.
+**Example:** if `ConfirmationModal` Uses = `Modal, Button, SecondaryButton`, all three get mapped in the same session. `Modal` in turn uses `react-modal` externally — that's where the chain stops.
 
-Bij echt ontbrekende code (component bestaat niet, terwijl Figma 'm wel toont): stop en markeer als `component-missing` drift, vraag wat te doen.
+When code is genuinely missing (component does not exist while Figma shows one): stop and mark as `component-missing` drift, ask what to do.
 
-### A6. Validation-checklist (afsluiting per mapping-pass)
+### A6. Validation checklist (closing per mapping pass)
 
-Aan het einde van elke component-mapping (vóór commit/sync) loop je deze 7 checks expliciet langs. Drift-test is filter (wat ga ik markeren?); deze checklist is positief (heb ik niets stilzwijgend laten lopen?).
+At the end of every component mapping (before commit/sync) walk through these 7 checks explicitly. Drift test is a filter (what am I going to mark?); this checklist is positive (did I let nothing slip silently?).
 
-| # | Check | Waar gevalideerd |
+| # | Check | Where validated |
 |---|---|---|
-| 1 | **Layout** — sizing, spacing, alignment matchen MCP-output (binnen scope-regels) | Mapping-tabellen + drift-aandachtspunten |
-| 2 | **Typografie** — font-family, size, weight, line-height matchen Figma-style | Mapping-tabel onder "Tekst" |
-| 3 | **Kleuren** — exact match op Figma-variabele (Yellow/Y100, Blue/B30, etc.) of `[VERIFY]` | Mapping-tabel onder "Container/Kleur" |
-| 4 | **States** — variants en states (hover/focus/active/disabled) gemapt waar Figma die toont | Variant-mapping subsectie |
-| 5 | **Assets** — SVG/icon/image-bronnen verwijzen naar bestaande project-assets of MCP-localhost-URL — geen nieuwe imports, geen placeholders | Mapping-tabel "Icon-source / Asset" |
-| 6 | **Literal strings** — `aria-label`, `alt`, `placeholder`, `title`, hardcoded labels in code zijn gemapt (code-waarde + bron) | Mapping-tabel "Tekst" of aparte rij "Aria-label" |
-| 7 | **Drift-test gepasseerd** — kandidaat-issues geclassificeerd: drift, verify-queue, of weg | `drifts.md` + `verify-queue.md` |
+| 1 | **Layout** — sizing, spacing, alignment match MCP output (within scope rules) | Mapping tables + drift notes |
+| 2 | **Typography** — font-family, size, weight, line-height match Figma style | Mapping table under "Text" |
+| 3 | **Colors** — exact match on Figma variable (Yellow/Y100, Blue/B30, etc.) or `[VERIFY]` | Mapping table under "Container/Color" |
+| 4 | **States** — variants and states (hover/focus/active/disabled) mapped where Figma shows them | Variant-mapping subsection |
+| 5 | **Assets** — SVG/icon/image sources reference existing project assets or MCP-localhost URL — no new imports, no placeholders | Mapping table "Icon-source / Asset" |
+| 6 | **Literal strings** — `aria-label`, `alt`, `placeholder`, `title`, hardcoded labels in code are mapped (code value + source) | Mapping table "Text" or separate row "Aria-label" |
+| 7 | **Drift test passed** — candidate issues classified: drift, verify-queue, or discarded | `drifts.md` + `verify-queue.md` |
 
-Vink in de spec onder "Drift-aandachtspunten" af: *"Spec laatst gevalideerd: [datum] (A6 doorlopen)."*
+Tick off in the spec under "Drift notes": *"Spec last validated: [date] (A6 walked through)."*
 
 ## Lessons learned
 
-Vastleggen wanneer een regel **niet werkte** (correctie nodig) **én** wanneer een regel **wél werkte** (bewust herhalen). Strict format, max 5 regels per entry. Nieuwe entries onderaan.
+Record when a rule **did not work** (correction needed) **and** when a rule **did work** (deliberately repeat). Strict format, max 5 lines per entry. New entries at the bottom.
 
 ```
-[LESSON — YYYY-MM-DD] [type: correctie | bevestiging]
-Situatie: <wat gebeurde, 1 regel>
-Wat werkte (of niet): <observatie, 1-2 regels>
-Voorstel: <regel aanpassen of houden, 1 regel>
+[LESSON — YYYY-MM-DD] [type: correction | confirmation]
+Situation: <what happened, 1 line>
+What worked (or did not): <observation, 1-2 lines>
+Proposal: <change rule or keep, 1 line>
 ```
 
 ---
 
-[LESSON — 2026-05-05] [bevestiging]
-Situatie: Live MCP-test op modal-frame `16599:2645` na strakke drift-test + mapping-only specs.
-Wat werkte: Drift-test als filter werkte: 7 kandidaten binnen, 5 echte drifts, 0 ruis. 2 nieuwe Button-drifts gevonden (padding-x 24 vs 20, radius 40 vs 44).
-Voorstel: Drift-test + mapping-only specs houden — juiste regime voor MCP-codegen-kwaliteit.
+[LESSON — 2026-05-05] [confirmation]
+Situation: Live MCP test on modal frame `16599:2645` after strict drift test + mapping-only specs.
+What worked: Drift test as filter worked: 7 candidates in, 5 real drifts, 0 noise. 2 new Button drifts found (padding-x 24 vs 20, radius 40 vs 44).
+Proposal: Keep drift test + mapping-only specs — right regime for MCP code-generation quality.
 
-[LESSON — 2026-05-05] [correctie]
-Situatie: Eerste Button-mapping noteerde alleen code-waardes ("16px 24px | theme.spacing.lg + xl") zonder Figma-vergelijking. Drifts pas in re-validatie gevonden.
-Wat niet werkte: Spec-tabellen waren code-documentatie, geen mapping-vergelijking. Drift-detectie hing aan re-validatie i.p.v. eerste pass.
-Voorstel: A4 verplicht maken: per hardcoded waarde direct vergelijken met Figma-instance. Drift bij eerste pass markeren, niet later. (Doorgevoerd in A4b.)
+[LESSON — 2026-05-05] [correction]
+Situation: First Button mapping noted only code values ("16px 24px | theme.spacing.lg + xl") without Figma comparison. Drifts found only in re-validation.
+What did not work: Spec tables were code documentation, not mapping comparison. Drift detection hung on re-validation instead of the first pass.
+Proposal: Make A4 mandatory: per hardcoded value, compare directly with Figma instance. Mark drift on first pass, not later. (Implemented in A4b.)
 
-[LESSON — 2026-05-05] [correctie]
-Situatie: Agent interpreteerde Figma's auto-paste "Implement this design from Figma." (uit *Copy Link* Dev mode) als user-instructie en deed token + button.tsx changes, gevolgd door revert.
-Wat niet werkte: Boilerplate-tekst werd verward met expliciete dev-task. Hard Rule #2 onbedoeld weggeredeneerd zonder dat user iets vroeg.
-Voorstel: Hard Rule #2 expliciet uitsplitsen wat wel/niet als code-update-trigger geldt. (Doorgevoerd in v2.4.)
+[LESSON — 2026-05-05] [correction]
+Situation: Agent interpreted Figma's auto-paste "Implement this design from Figma." (from *Copy Link* Dev mode) as a user instruction and made token + button.tsx changes, followed by revert.
+What did not work: Boilerplate text was confused with explicit dev task. Hard Rule #2 inadvertently reasoned away without the user asking.
+Proposal: Make Hard Rule #2 explicitly split out what does/does not count as code-update trigger. (Implemented in v2.4.)
 
-[LESSON — 2026-05-05] [bevestiging]
-Situatie: get_design_context op shadcn-kit Button size-symbols (1463:5702/5739/5737) gaf MCP-timeout. Eerste pass strandde drie items in verify-queue.
-Wat werkte: Retry met payload-reductie-parameter (`excludeScreenshot: true` op fileKey-based MCP) slaagde direct op alle 3 nodes. Goedkoper dan metadata-split.
-Voorstel: A4a uitbreiden — payload-reductie als eerste fallback voor timeouts, vóór metadata-split. (Doorgevoerd in v2.5.)
+[LESSON — 2026-05-05] [confirmation]
+Situation: get_design_context on shadcn-kit Button size symbols (1463:5702/5739/5737) returned MCP timeout. First pass stranded three items in verify-queue.
+What worked: Retry with payload-reduction parameter (`excludeScreenshot: true` on fileKey-based MCP) succeeded directly on all 3 nodes. Cheaper than metadata split.
+Proposal: Extend A4a — payload reduction as first fallback for timeouts, before metadata split. (Implemented in v2.5.)
 
-[LESSON — 2026-05-05] [correctie]
-Situatie: Pass-1 (Accordion alleen) markeerde 14 tokens als figma-missing. Pass-2 op Button-page bewees dat 6 daarvan wél bestaan in Figma — niet op Accordion. Eén grote correctie nodig in tokens.md + drifts.md.
-Wat niet werkte: Single-node `get_variable_defs` is scope-beperkt tot wat die node consumeert. Vals-positieve `figma-missing` flags ontstaan automatisch bij beperkte query-set.
-Voorstel: A4 waarschuwing — minimaal 3 component-pages uit verschillende categorieën queryen voor `figma-missing` definitief. (Doorgevoerd in v2.6.)
+[LESSON — 2026-05-05] [correction]
+Situation: Pass 1 (Accordion only) marked 14 tokens as figma-missing. Pass 2 on Button page proved that 6 of those do exist in Figma — just not on Accordion. One large correction needed in tokens.md + drifts.md.
+What did not work: Single-node `get_variable_defs` is scope-limited to what that node consumes. False-positive `figma-missing` flags arise automatically from a limited query set.
+Proposal: A4 warning — query at least 3 component pages from different categories before declaring `figma-missing` definitive. (Implemented in v2.6.)
 
-[LESSON — 2026-05-05] [correctie]
-Situatie: Pass-2 concludeerde primary-hover gebruikte white/12 overlay op basis van Button-page-level vars. Pass-3 (per-symbol query op 73:3668) toonde dat primary-hover chart-1 + opacity:0.9 gebruikt — géén white/12.
-Wat niet werkte: Page-level `get_variable_defs` aggregeert vars; identiteit per variant/state gaat verloren. Conclusies over hover-mechanisme op aggregated data zijn structureel fragiel.
-Voorstel: A4d toevoegen — voor State=hover/focus/active symbols apart queryen voor accuraat mapping. (Doorgevoerd in v2.6.)
+[LESSON — 2026-05-05] [correction]
+Situation: Pass 2 concluded primary-hover used a white/12 overlay based on Button-page-level vars. Pass 3 (per-symbol query on 73:3668) showed that primary-hover uses chart-1 + opacity:0.9 — no white/12.
+What did not work: Page-level `get_variable_defs` aggregates vars; identity per variant/state is lost. Conclusions about hover mechanism on aggregated data are structurally fragile.
+Proposal: Add A4d — query State=hover/focus/active symbols separately for accurate mapping. (Implemented in v2.6.)
 
-[LESSON — 2026-05-05] [bevestiging]
-Situatie: Live MCP-tests bevestigen dat asset-URLs verschillen per MCP-server: `localhost:3845/...` (desktop-active) vs `figma.com/api/mcp/asset/...` (fileKey-based, 7-dagen TTL). Plus: fileKey-MCP ondersteunt `excludeScreenshot`, desktop-MCP niet.
-Wat werkte: Optie-C in skill — beide MCPs expliciet documenteren met capability-verschillen helpt agents kiezen welke tool past bij batch- vs eyes-on werk.
-Voorstel: MCP-server-tabel + asset-URL dual-format expliciet vastleggen in Bron-mechanisme. (Doorgevoerd in v2.6.)
+[LESSON — 2026-05-05] [confirmation]
+Situation: Live MCP tests confirm asset URLs differ per MCP server: `localhost:3845/...` (desktop-active) vs `figma.com/api/mcp/asset/...` (fileKey-based, 7-day TTL). Plus: fileKey-MCP supports `excludeScreenshot`, desktop-MCP does not.
+What worked: Documenting both MCPs explicitly with capability differences in the skill helps agents pick which tool fits batch vs eyes-on work.
+Proposal: Make MCP-server table + asset-URL dual-format explicit in Source mechanism. (Implemented in v2.6.)
 
-## Verwijzingen
+[LESSON — 2026-05-06] [confirmation]
+Situation: Mapping pass on shadcn-kit project with Dutch SKILL.md/README; LLM had to translate concepts internally before reasoning, sometimes losing precision on technical terms (e.g. "bron-verdeling" ↔ "source-of-truth allocation").
+What worked: Translating the entire skill (SKILL.md, README, templates) to English aligned terminology with library docs (Figma, shadcn, Tailwind, React) and reduced internal translation cost. Dutch nuance preserved in core principles ("drift = decision point, not debt").
+Proposal: Skill written in English; project-side mapping outputs may stay in any language the team prefers. (Implemented in v2.7.)
 
-- `templates/tokens.md` — leeg tokens-template
-- `templates/components.md` — leeg components-index template
-- `templates/component-spec.md` — template voor één component-spec
-- `templates/drifts.md` — leeg drift-aggregator template
-- `templates/verify-queue.md` — leeg `[VERIFY]`-queue template
-- `templates/claude-md-snippet.md` — markdown om in projectrepo CLAUDE.md te plakken
-- `templates/example-confirmation-modal/` — ingevuld voorbeeld
+## References
+
+- `templates/tokens.md` — empty tokens template
+- `templates/components.md` — empty components-index template
+- `templates/component-spec.md` — template for a single component spec
+- `templates/drifts.md` — empty drift-aggregator template
+- `templates/verify-queue.md` — empty `[VERIFY]`-queue template
+- `templates/claude-md-snippet.md` — markdown to paste into project CLAUDE.md
+- `templates/example-confirmation-modal/` — filled example

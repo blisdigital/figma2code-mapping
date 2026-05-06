@@ -1,56 +1,56 @@
-# Tokens — Voorbeeld (Blis ConfirmationModal scope)
+# Tokens — Example (Blis ConfirmationModal scope)
 
-> **Dit is een ingevuld voorbeeld** ter referentie voor hoe een werkende `tokens.md`
-> eruitziet in een echt project (Blis, React + Emotion + TypeScript theme-object).
-> Kopieer niet rechtstreeks — gebruik `templates/tokens.md` voor je eigen project.
+> **This is a filled example** for reference, showing what a working `tokens.md`
+> looks like in a real project (Blis, React + Emotion + TypeScript theme object).
+> Do not copy directly — use `templates/tokens.md` for your own project.
 
-## Bron-relatie
+## Source-of-truth allocation
 
-Code is source of truth. Tokens leven in `src/theme/tokens.ts` + `src/theme/colors.ts`,
-gebundeld via `src/theme/index.ts` als TypeScript theme-object.
+Code is source of truth. Tokens live in `src/theme/tokens.ts` + `src/theme/colors.ts`,
+bundled via `src/theme/index.ts` as a TypeScript theme object.
 
 ## Format
 
-TypeScript theme-object. Code-pad is `theme.<categorie>.<token>`.
+TypeScript theme object. Code path is `theme.<category>.<token>`.
 
-## Schrijfconventie
+## Writing convention
 
-| Kolom | Inhoud |
+| Column | Content |
 |---|---|
-| **Code-pad** | `theme.fontSizes.xs` |
-| **Figma-naam** | `Color/Brand/P500` of `—` of `[VERIFY]` |
-| **Waarde** | De actuele waarde |
-| **Gebruik** | Korte uitleg |
+| **Code path** | `theme.fontSizes.xs` |
+| **Figma name** | `Color/Brand/P500` or `—` or `[VERIFY]` |
+| **Value** | The actual value |
+| **Use** | Short explanation |
 
 ---
 
 ## Color
 
-| Code-pad | Figma-naam | Waarde | Gebruik |
+| Code path | Figma name | Value | Use |
 |---|---|---|---|
-| `theme.core.white` | `White` | `#FFFFFF` | Modal-achtergrond, button-achtergrond |
+| `theme.core.white` | `White` | `#FFFFFF` | Modal background, button background |
 | `theme.gray[100]` | `[VERIFY]` | `#1D2632` | Body text, secondary button text |
-| `theme.gray[60]` | `[VERIFY]` | `#777D84` | CloseIcon fill, CloseButton focus-outline |
-| `theme.blue[120]` | `[VERIFY]` | `#316A7D` | ModalH3 styled component (niet door Modal-wrapper gebruikt) |
-| `theme.blue[40]` | `[VERIFY]` | `#C5DBE3` | ModalFooter borderTop wanneer niet hidden |
+| `theme.gray[60]` | `[VERIFY]` | `#777D84` | CloseIcon fill, CloseButton focus outline |
+| `theme.blue[120]` | `[VERIFY]` | `#316A7D` | ModalH3 styled component (not used by Modal wrapper) |
+| `theme.blue[40]` | `[VERIFY]` | `#C5DBE3` | ModalFooter borderTop when not hidden |
 | `theme.blue[30]` | `Blue/B30` | `#D3E4EA` | Modal mobile borderTop, SecondaryButton border |
 | `theme.yellow[100]` | `Yellow/Y100` | `#FFCD00` | Highlight via theme.highlight |
 
-> **Note.** `theme.gray[100]` heeft dezelfde waarde (#1D2632) als `theme.neutral.N100` — duplicaat in code. Voor mapping op Figma `Neutral/N100`: gebruik `theme.neutral.N100`. Bestaande componenten die `theme.gray[100]` gebruiken zijn niet drift, maar nieuwe code volgt de neutral-laag.
+> **Note.** `theme.gray[100]` has the same value (#1D2632) as `theme.neutral.N100` — duplicate in code. For mapping to Figma `Neutral/N100`: use `theme.neutral.N100`. Existing components that use `theme.gray[100]` are not drift, but new code follows the neutral layer.
 
 ## Spacing
 
-| Code-pad | Figma-naam | Waarde | Gebruik |
+| Code path | Figma name | Value | Use |
 |---|---|---|---|
 | `theme.spacing.xs` | `[VERIFY]` | `4px` | CloseButton padding |
-| `theme.spacing.sm` | `[VERIFY]` | `8px` | ModalFooter gap, gap binnen Button |
+| `theme.spacing.sm` | `[VERIFY]` | `8px` | ModalFooter gap, gap inside Button |
 | `theme.spacing.lg` | `[VERIFY]` | `16px` | ModalFooter padding-top, button medium-padding-x |
 | `theme.spacing.xl` | `[VERIFY]` | `24px` | Modal padding-vertical, ModalFooter padding-right |
 | `theme.spacing.xxl` | `[VERIFY]` | `32px` | Modal padding-horizontal |
 
 ## Radius
 
-| Code-pad | Figma-naam | Waarde | Gebruik |
+| Code path | Figma name | Value | Use |
 |---|---|---|---|
 | `theme.radius.sm` | `[VERIFY]` | `4px` | CloseButton focus-outline border-radius |
 | `theme.radius.lg` | `[VERIFY]` | `16px` | Modal border-radius (desktop) |
@@ -58,44 +58,44 @@ TypeScript theme-object. Code-pad is `theme.<categorie>.<token>`.
 
 ## Shadow
 
-| Code-pad | Figma-naam | Waarde | Gebruik |
+| Code path | Figma name | Value | Use |
 |---|---|---|---|
 | `theme.shadows.lg` | `[VERIFY]` | `0 4px 16px 0 rgba(29, 38, 50, 0.20)` | Modal boxShadow |
 
 ## Typography
 
-| Code-pad | Figma-naam | Waarde | Gebruik |
+| Code path | Figma name | Value | Use |
 |---|---|---|---|
 | `theme.fontSizes.xs` | `[VERIFY]` | `12px` | Body text in ConfirmationModal, button text |
-| `theme.lineHeights.xs` | `[VERIFY]` | `16px` | Past bij `fontSizes.xs` |
+| `theme.lineHeights.xs` | `[VERIFY]` | `16px` | Pairs with `fontSizes.xs` |
 | `theme.fontWeights.regular` | `[VERIFY]` | `500` | Body text weight |
 | `theme.fontWeights.semibold` | `[VERIFY]` | `600` | Button text weight |
 
 ## Z-index
 
-| Code-pad | Figma-naam | Waarde | Gebruik |
+| Code path | Figma name | Value | Use |
 |---|---|---|---|
 | `theme.zIndex.modal` | — | `101` | Modal overlay |
 
 ---
 
-## Impliciete semantic-laag
+## Implicit semantic layer
 
-| Code-pad | Verwijst naar | Gebruik |
+| Code path | Refers to | Use |
 |---|---|---|
 | `theme.highlight` | `yellow[100]` | Primary action color |
 | `theme.primary` | `gray[100]` | Primary text |
 | `theme.danger` | `red[100]` | Destructive |
 | `theme.success` | `green[100]` | Success |
-| `theme.contentBlock` | `core.white` | Card/modal achtergrond |
+| `theme.contentBlock` | `core.white` | Card/modal background |
 
-> **Note.** Niet forced uitgebreid. Wanneer een nieuwe component een betekenis-laag
-> nodig heeft die niet bestaat, voeg een alias toe in `theme/index.ts`.
+> **Note.** Not forcibly expanded. When a new component needs a meaning layer
+> that does not exist, add an alias in `theme/index.ts`.
 
 ---
 
 ## Sync log
 
-| Datum | Wijziging | Reden |
+| Date | Change | Reason |
 |---|---|---|
-| `2026-04-30` | Initial fill bij ConfirmationModal documentatie | Eerste pass workflow |
+| `2026-04-30` | Initial fill during ConfirmationModal documentation | First-pass workflow |

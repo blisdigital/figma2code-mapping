@@ -1,51 +1,51 @@
 # Components — index
 
-Index van alle gedocumenteerde componenten in dit project, geclassificeerd volgens
+Index of all documented components in this project, classified according to
 atomic design.
 
-> **Bron-relatie.** Code is source of truth — daadwerkelijke implementatie staat in
-> `src/components/`. Deze index toont *wat* er bestaat, *wat-gebruikt-wat*, en welke
-> Figma-node erbij hoort.
+> **Source-of-truth allocation.** Code is source of truth — actual implementation
+> lives in `src/components/`. This index shows *what* exists, *what-uses-what*, and
+> which Figma node belongs to it.
 
-## Atomic design — drie niveaus
+## Atomic design — three levels
 
-**Atoms** zijn onsplitsbaar. Knoppen, inputs, iconen, labels, badges.
+**Atoms** are indivisible. Buttons, inputs, icons, labels, badges.
 
-**Molecules** zijn samenstellingen van atoms met één gedeeld doel.
+**Molecules** are compositions of atoms with one shared purpose.
 
-**Organisms** zijn complexe samenstellingen met eigen state, scroll-gedrag, of
-toetsenbord-navigatie.
+**Organisms** are complex compositions with their own state, scroll behavior, or
+keyboard navigation.
 
-## Selectie-volgorde — organisms eerst
+## Selection order — organisms first
 
-Bij het mappen van een Figma-frame naar code: **check eerst of een organism past, dan
-molecules, dan atoms.** Combineer geen atoms als er al een hogere-orde component
-bestaat.
+When mapping a Figma frame to code: **first check whether an organism fits, then
+molecules, then atoms.** Do not combine atoms when a higher-order component
+already exists.
 
-## Schrijfconventie
+## Writing convention
 
-- Componenten in PascalCase
-- Per component: naam, `Uses`, één-zinnige beschrijving, link naar detail-spec, Figma-referentie
-- `Uses` bevat alleen directe imports van **interne componenten**, geen recursieve
-  uitwerking, geen externe libraries (die staan in de component-spec)
-- Atoms hebben altijd `Uses: —`
+- Components in PascalCase
+- Per component: name, `Uses`, one-sentence description, link to detail spec, Figma reference
+- `Uses` contains only direct imports of **internal components**, no recursive
+  expansion, no external libraries (those go in the component spec)
+- Atoms always have `Uses: —`
 
 ---
 
 ## Atoms
 
-| Component | Uses | Beschrijving | Detail | Figma |
+| Component | Uses | Description | Detail | Figma |
 |---|---|---|---|---|
 | | — | | | |
 
 ## Molecules
 
-| Component | Uses | Beschrijving | Detail | Figma |
+| Component | Uses | Description | Detail | Figma |
 |---|---|---|---|---|
 | | | | | |
 
 ## Organisms
 
-| Component | Uses | Beschrijving | Detail | Figma |
+| Component | Uses | Description | Detail | Figma |
 |---|---|---|---|---|
 | | | | | |

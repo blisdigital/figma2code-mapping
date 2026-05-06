@@ -1,18 +1,18 @@
-# ConfirmationModal — Voorbeeld
+# ConfirmationModal — Example
 
-> **Ingevuld voorbeeld uit een React + MUI + Emotion project.** Adopteer de **structuur** (secties, mapping-tabellen, drift-format), niet de waarden of imports — die zijn project-specifiek. Gebruik `templates/component-spec.md` voor je eigen project.
+> **Filled example from a React + MUI + Emotion project.** Adopt the **structure** (sections, mapping tables, drift format), not the values or imports — those are project-specific. Use `templates/component-spec.md` for your own project.
 
-Bevestigings-modal met titel + message + 2 CTAs (Annuleren links, primary actie rechts) + optionele loading-state op de primary CTA. Wrapper bovenop generieke `Modal`.
+Confirmation modal with title + message + 2 CTAs (Cancel left, primary action right) + optional loading state on the primary CTA. Wrapper on top of the generic `Modal`.
 
-**Figma:** frame `16599:2645` ([link](https://www.figma.com/...)) — frame, geen Figma-master.
+**Figma:** frame `16599:2645` ([link](https://www.figma.com/...)) — frame, no Figma master.
 
-**Locatie in codebase:** `src/components/ui/confirmation-modal/`
+**Location in codebase:** `src/components/ui/confirmation-modal/`
 
 **Type:** organism
 
-## Compositie
+## Composition
 
-| Component | Locatie |
+| Component | Location |
 |---|---|
 | `Modal` | `src/components/ui/modal/` |
 | `SecondaryButton` | `src/components/ui/button/` |
@@ -20,76 +20,76 @@ Bevestigings-modal met titel + message + 2 CTAs (Annuleren links, primary actie 
 
 **Uses:** Modal, Button, SecondaryButton
 
-## Voorbeeld
+## Example
 
 ```tsx
 <ConfirmationModal isOpen={isOpen} onClose={onClose} onConfirm={onConfirm}
-  title="Wachtwoord resetten" message="Weet je zeker..."
-  confirmLabel="Wachtwoord resetten" isLoading={isResetting} />
+  title="Reset password" message="Are you sure..."
+  confirmLabel="Reset password" isLoading={isResetting} />
 ```
 
 ## Props
 
-| Prop | Type | Default | Beschrijving |
+| Prop | Type | Default | Description |
 |---|---|---|---|
-| `isOpen` | `boolean` | — | Of de modal getoond wordt |
-| `onClose` | `() => void` | — | Klik op X / Cancel / esc / overlay |
-| `onConfirm` | `() => void` | — | Klik op primary action-knop |
-| `title` | `string` | — | Titel |
-| `message` | `string` | — | Body-tekst |
-| `confirmLabel` | `string` | — | Label voor primary knop |
-| `isLoading` | `boolean` | `false` | Disabled primary + label-swap naar `"Bezig..."` |
+| `isOpen` | `boolean` | — | Whether the modal is shown |
+| `onClose` | `() => void` | — | Click on X / Cancel / esc / overlay |
+| `onConfirm` | `() => void` | — | Click on primary action button |
+| `title` | `string` | — | Title |
+| `message` | `string` | — | Body text |
+| `confirmLabel` | `string` | — | Label for primary button |
+| `isLoading` | `boolean` | `false` | Disabled primary + label swap to `"Loading..."` |
 
 ## Mapping: Figma → Code
 
-### Modal-frame (achtergrond, container)
+### Modal frame (background, container)
 
-Frame is een afgerond witte container met drop-shadow. Gerenderd via `Modal` (zie modal.md voor container-mapping). ConfirmationModal voegt geen container-styling toe.
+The frame is a rounded white container with drop shadow. Rendered via `Modal` (see modal.md for container mapping). ConfirmationModal adds no container styling.
 
 ### Header — title + close
 
-Gerenderd via `Modal` (zie modal.md Header-mapping). ConfirmationModal levert alleen de `title`-prop.
+Rendered via `Modal` (see modal.md Header mapping). ConfirmationModal supplies only the `title` prop.
 
-### Body — message-tekst
+### Body — message text
 
-`<p css={messageStyles}>{message}</p>` binnen `<ModalInner>`. Styling uit `confirmation-modal.styles.ts`.
+`<p css={messageStyles}>{message}</p>` inside `<ModalInner>`. Styling from `confirmation-modal.styles.ts`.
 
-| Eigenschap | Code-waarde | Token / Bron |
+| Property | Code value | Token / Source |
 |---|---|---|
 | Margin | `0` | hardcoded (reset) |
-| Kleur | `#1D2632` | `theme.neutral.N100` |
+| Color | `#1D2632` | `theme.neutral.N100` |
 | Font-size | `12px` | `theme.fontSizes.xs` |
-| Font-weight | `500` | `theme.fontWeights.regular` (visueel "Medium") |
-| Line-height | `16px` | hardcoded (matcht `theme.lineHeights.xs`) |
+| Font-weight | `500` | `theme.fontWeights.regular` (visually "Medium") |
+| Line-height | `16px` | hardcoded (matches `theme.lineHeights.xs`) |
 
 ### Footer — Cancel + primary
 
-`<ModalFooter>` met `actions={<><SecondaryButton/><Button/></>}` en `hideFooterBorder={true}`.
+`<ModalFooter>` with `actions={<><SecondaryButton/><Button/></>}` and `hideFooterBorder={true}`.
 
-**Cancel-knop:**
+**Cancel button:**
 
-| Eigenschap | Code-waarde | Token / Bron |
+| Property | Code value | Token / Source |
 |---|---|---|
-| Component | `<SecondaryButton onClick={onClose}>` | zie secondary-button.md |
-| Label | `"Annuleer"` | hardcoded |
+| Component | `<SecondaryButton onClick={onClose}>` | see secondary-button.md |
+| Label | `"Cancel"` | hardcoded |
 
-**Primary action-knop:**
+**Primary action button:**
 
-| Eigenschap | Code-waarde | Token / Bron |
+| Property | Code value | Token / Source |
 |---|---|---|
-| Component | `<Button variant="contained" color="highlight">` | zie button.md |
-| Label | `props.confirmLabel` (of `"Bezig..."` bij isLoading) | dynamic |
-| Disabled-state | `disabled={isLoading}` | code |
+| Component | `<Button variant="contained" color="highlight">` | see button.md |
+| Label | `props.confirmLabel` (or `"Loading..."` when isLoading) | dynamic |
+| Disabled state | `disabled={isLoading}` | code |
 
-### Variant-mapping
+### Variant mapping
 
-| Figma context | Code-component | Code-props |
+| Figma context | Code component | Code props |
 |---|---|---|
-| Reset password modal-frame `16599:2645` | `ConfirmationModal` | `title="..." message="..." confirmLabel="..."` |
+| Reset password modal frame `16599:2645` | `ConfirmationModal` | `title="..." message="..." confirmLabel="..."` |
 
-## Drift-aandachtspunten
+## Drift notes
 
-> **Spec laatst gevalideerd:** 2026-05-05 (A6 doorlopen). Code-files in sync (hash `8d401e0...`). Cache via live MCP geverifieerd.
+> **Spec last validated:** 2026-05-05 (A6 walked through). Code files in sync (hash `8d401e0...`). Cache verified via live MCP.
 
-- **value-mismatch [Major][DEV]** — `modal.tsx:49` Close-icon size hardcoded `16×16` vs Figma instance `24×24` (Δ8). Iconen-tabel: Δ >4px = Major. Beïnvloedt tap-target.
-- **token-mismatch [Minor][DEV+DESIGNER]** — `theme/tokens.ts` `shadows.lg` rgba `(29,38,50,0.20)` vs Figma `(135,173,187,0.20)`. Shadow-tabel: kleur-verschil = Minor.
+- **value-mismatch [Major][DEV]** — `modal.tsx:49` Close-icon size hardcoded `16×16` vs Figma instance `24×24` (Δ8). Icon table: Δ >4px = Major. Affects tap target.
+- **token-mismatch [Minor][DEV+DESIGNER]** — `theme/tokens.ts` `shadows.lg` rgba `(29,38,50,0.20)` vs Figma `(135,173,187,0.20)`. Shadow table: color difference = Minor.

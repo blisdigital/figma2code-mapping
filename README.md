@@ -1,110 +1,122 @@
 # Figma-to-Code skill
 
-Mapping-skill voor ontwikkelaars die Figma-MCP-codegen ≥90% willen laten matchen met een bestaande codebase, zonder Figma Code Connect of Storybook in te zetten.
+Mapping skill for developers who want Figma MCP code generation to match an existing codebase ≥90%, without having to set up Figma Code Connect or Storybook.
 
-## Voor wie
+## Vision
 
-Deze skill is een **developer tool**. Doelgroep: ontwikkelaars die in een React/Vue/Svelte/etc. codebase werken met een design-system in Figma, en willen dat Claude Code's Figma-MCP-output direct hun bestaande tokens, componenten en imports gebruikt — geen handmatig vertaalwerk per request.
+**Goal: tight alignment between code and Figma.** Code is source of truth, Figma is intent — the skill keeps these two close together via five mechanisms:
 
-**Twee-laagse setup:**
+1. **Token mapping** (`docs/tokens.md`) — Figma variable → code path → value, with explicit status per row (`match` / `value-mismatch` / `figma-missing` / `code-missing`)
+2. **Component mapping** (`docs/components.md` + per-component specs co-located next to `<name>.tsx`) — atomic-design index, Uses column, variant and naming aliases
+3. **Drift as decision point** (`docs/drifts.md`) — not silently resolved but marked with severity (Critical/Major/Minor) and owner (DEV/DESIGNER/DEV+DESIGNER) so designer or dev picks a resolution
+4. **Verify queue** (`docs/verify-queue.md`) — unconfirmed mappings until the next live-MCP session, prevents false `figma-missing` conclusions
+5. **Hard Rule "consume existing"** — every Figma element matches first against existing primitives before something new is proposed; the A1-A6 method enforces this order
 
-| Laag | Waar | Wat |
+Together these five deliver the ≥90%: token utilities resolve to the right CSS vars, primitives are consumed (no duplicates), variants map via an explicit table, and drift does not pile up silently.
+
+## For whom
+
+This skill is a **developer tool**. Audience: developers working in a React/Vue/Svelte/etc. codebase with a design system in Figma, who want Claude Code's Figma MCP output to use their existing tokens, components, and imports directly — no manual translation per request.
+
+**Two-layer setup:**
+
+| Layer | Where | What |
 |---|---|---|
-| **Skill (deze repo)** | `~/.claude/skills/figma-to-code/` (via symlink) | De werkwijze zelf — wordt automatisch geladen door Claude Code |
-| **Output (per project)** | `<jouw-project>/docs/` of `<jouw-project>/Figma-to-code/figma-to-code-mapping/` | De mapping-docs die in jouw repo komen (`tokens.md`, `components.md`, per-component-specs, `drifts.md`, `verify-queue.md`) |
+| **Skill (this repo)** | `~/.claude/skills/figma-to-code/` (via symlink) | The method itself — automatically loaded by Claude Code |
+| **Output (per project)** | `<your-project>/docs/` or `<your-project>/Figma-to-code/figma-to-code-mapping/` | The mapping docs that land in your repo (`tokens.md`, `components.md`, per-component specs, `drifts.md`, `verify-queue.md`) |
 
-De skill is project-agnostisch geïnstalleerd op user-level; de mapping-output staat in iedere project-repo afzonderlijk.
+The skill is project-agnostic and installed at user level; the mapping output lives in each project repo separately.
 
-## Wat het doet
+## What it does
 
-Wanneer Claude Code in jouw project-repo werkt en deze skill triggert:
+When Claude Code works in your project repo and this skill triggers:
 
-- Inventariseert je codebase (waar leven tokens, component-folders, styling-aanpak)
-- Bouwt incrementeel een mapping op (`tokens.md`, `components.md`, per-component-specs)
-- Vergelijkt elke Figma-instance met de code en markeert echte drift via een drift-test
-- Houdt onbevestigde mappings vast in een `verify-queue.md` voor de volgende live-MCP-sessie
-- Doorloopt een A1-A6 werkwijze: inventariseer → tokens → spec → Figma-mapping → recursive Uses → validation-checklist
+- Inventories your codebase (where tokens live, component folders, styling approach)
+- Builds a mapping incrementally (`tokens.md`, `components.md`, per-component specs)
+- Compares each Figma instance with the code and marks real drift via a drift test
+- Holds unconfirmed mappings in a `verify-queue.md` for the next live-MCP session
+- Walks through an A1-A6 method: inventory → tokens → spec → Figma mapping → recursive Uses → validation checklist
 
-Volledige werkwijze en regels: zie [SKILL.md](SKILL.md).
+Full method and rules: see [SKILL.md](SKILL.md).
 
-## Installatie
+## Installation
 
-De aanbevolen aanpak is een **symlink** vanuit `~/.claude/skills/figma-to-code/` naar deze repo. Voordeel: één source of truth — wijzigingen via `git pull` zijn direct actief in elk project dat de skill gebruikt.
+The recommended approach is a **symlink** from `~/.claude/skills/figma-to-code/` to this repo. Benefit: one source of truth — changes via `git pull` are immediately active in every project that uses the skill.
 
 ```bash
-# Clone deze repo
+# Clone this repo
 git clone https://github.com/blisdigital/figma2code.git ~/Github/figma2code
 
-# Symlink in ~/.claude/skills/
+# Symlink into ~/.claude/skills/
 ln -s ~/Github/figma2code ~/.claude/skills/figma-to-code
 
-# Verifieer
+# Verify
 claude
 > /skills
-# Zou figma-to-code moeten tonen
+# Should show figma-to-code
 ```
 
-Voor updates:
+To update:
 ```bash
 cd ~/Github/figma2code && git pull
 ```
 
-## Gebruik
+## Usage
 
-### Eerste keer in een nieuwe projectrepo
+### First time in a new project repo
 
 ```
-$ cd /pad/naar/project
+$ cd /path/to/project
 $ claude
 > /figma-to-code setup
 ```
 
-Skill vraagt of het de `docs/`-structuur mag aanmaken. Bij bevestiging: kopieert `tokens.md`, `components.md`, `drifts.md`, `verify-queue.md` en het `components/`-template naar de projectrepo.
+The skill asks whether it may create the `docs/` structure. On confirmation: copies `tokens.md`, `components.md`, `drifts.md`, `verify-queue.md`, and the `components/` template into the project repo.
 
-### Permanent activeren in projectrepo
+### Permanently activate in project repo
 
 ```
 > /figma-to-code init-claude-md
 ```
 
-Toont een markdown-blok dat je in de project-`CLAUDE.md` plakt. Vanaf dan triggert de skill automatisch in elke chat — geen slash-command nodig.
+Shows a markdown block to paste into the project `CLAUDE.md`. From then on the skill triggers automatically in every chat — no slash command needed.
 
-### Component documenteren
+### Document a component
 
 ```
 > /figma-to-code map ConfirmationModal
 ```
 
-Of natural language:
+Or natural language:
 
 ```
-> Documenteer ConfirmationModal volgens onze figma-to-code werkwijze
+> Document ConfirmationModal following our figma-to-code method
 ```
 
-Skill doorloopt A1-A6: inventariseren, tokens vullen, component-spec maken, Figma-mapping (incl. drift-test), recursive Uses, validation-checklist.
+The skill walks through A1-A6: inventory, fill tokens, create component spec, Figma mapping (incl. drift test), recursive Uses, validation checklist.
 
-## Bestandsstructuur
+## File structure
 
 ```
 figma2code/
-├── SKILL.md                            ← werkwijze + hard rules + drift-taxonomie
-├── README.md                           ← dit bestand (humans)
-├── CLAUDE.md                           ← edit-conventies voor Claude in deze repo
+├── SKILL.md                            ← method + hard rules + drift taxonomy
+├── README.md                           ← this file (humans)
+├── CLAUDE.md                           ← edit conventions for Claude in this repo
 └── templates/
-    ├── tokens.md                       ← tokens-template (Figma-naam ↔ code-pad ↔ waarde)
-    ├── components.md                   ← components-index template (incl. Figma-node reverse-lookup)
-    ├── component-spec.md               ← template voor één component-spec
+    ├── tokens.md                       ← tokens template (Figma-name ↔ code-path ↔ value)
+    ├── components.md                   ← components-index template (incl. Figma-node reverse lookup)
+    ├── component-spec.md               ← template for a single component spec
     ├── drifts.md                       ← drift-aggregator template
     ├── verify-queue.md                 ← `[VERIFY]`-queue template
-    ├── claude-md-snippet.md            ← prompt-blok voor projectrepo CLAUDE.md
-    └── example-confirmation-modal/     ← ingevuld voorbeeld
+    ├── claude-md-snippet.md            ← prompt block for project-repo CLAUDE.md
+    └── example-confirmation-modal/     ← filled example
 ```
 
-## Wat dit niet is
+## What this is not
 
-- **Geen design-system documentatie-tool.** Doel is mapping, geen complete design-system-laag.
-- **Geen drift-detectie als hoofdfunctie.** Drift komt naar boven als bijproduct van mapping.
-- **Geen vervanging voor Figma Code Connect.** Voor projecten waar Code Connect is opgezet, doet die de mapping automatisch. Deze skill is voor projecten zonder.
-- **Geen documentatie van gedrag.** Hover, focus, motion, keyboard-handling leven in code, niet in specs.
+- **Not a design-system documentation tool.** The goal is mapping, not a complete design-system layer.
+- **Not a replacement for Figma Code Connect — a complement instead.** Code Connect binds Figma components to code snippets via `.figma.ts` files in the repo (requires a Figma Organization seat). This skill works freemium and with markdown, and adds something Code Connect does not: **drift detection as a loop**. Code Connect maps one-to-one; this skill detects when code and Figma drift apart and logs it as a decision point for designer or dev. The two approaches combine — Code Connect for mapping publication to Figma Dev Mode, this skill for the drift loop.
+- **Not behavior documentation.** Hover, focus, motion, keyboard handling live in code, not in specs.
+- **Not code generation.** The skill maps; MCP generates. Mapping is a policy layer, not a translator.
 
-Volledige skill-boundary inclusief routing naar zusterskills: zie [SKILL.md § Skill-boundary](SKILL.md#skill-boundary).
+Full skill boundary including routing to sister skills: see [SKILL.md § Skill boundary](SKILL.md#skill-boundary).
