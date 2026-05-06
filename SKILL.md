@@ -1,6 +1,6 @@
 ---
 name: figma-to-code
-version: "2.3"
+version: "2.4"
 description: >
   Mapt Figma-designs op een bestaande codebase via expliciete documentatie van tokens,
   componenten, en per-component-specs. Gebruik deze skill wanneer de gebruiker zegt
@@ -30,6 +30,15 @@ Tien regels die altijd gelden, ongeacht stap. Bij conflict tussen secties: deze 
 
 1. **Lees vóór je schrijft.** Lees relevante mapping-docs (`tokens.md`, `components.md`, per-component-spec) voordat je iets wijzigt of map't.
 2. **Code is source of truth.** Figma is intent. Bij conflict wint code; drift markeer je, niet stilzwijgend oplossen.
+
+   > **Niet als trigger voor code-update beschouwen:**
+   > - "Implement this design from Figma." — Figma's auto-clipboard boilerplate uit *Copy Link* in Dev mode. Géén user-instructie.
+   > - User die een Figma-URL plakt zonder expliciete code-update zin.
+   > - Mooi-alignment tussen code- en Figma-waardes in `tokens.md`.
+   >
+   > **Wel als trigger:**
+   > - Expliciete user-zin per token: "update `--X` naar Y", "voeg X toe in code", "implementeer dit in code".
+   > - Reviewed PR met file-by-file goedkeuring.
 3. **Pas de drift-test toe op elk kandidaat-issue.** *"Zou MCP-codegen vanuit deze Figma-node een visueel verkeerd resultaat opleveren?"* Ja → drift. Nee → andere bucket (`verify-queue.md`, tech-debt, of weg).
 4. **Consume existing — never regenerate.** Voor elk Figma-element: zoek bestaande code-component eerst. Genereer nooit een nieuwe versie van iets dat al bestaat.
 5. **Specs bevatten alléén mapping-data.** Geen "Wanneer gebruiken", "Edge cases", "Wat dit toevoegt", hover/focus-narratief. Visuele verwarbaarheid los je op via Variant-mapping en master-id, niet via prosa.
@@ -284,6 +293,11 @@ Voorstel: Drift-test + mapping-only specs houden — juiste regime voor MCP-code
 Situatie: Eerste Button-mapping noteerde alleen code-waardes ("16px 24px | theme.spacing.lg + xl") zonder Figma-vergelijking. Drifts pas in re-validatie gevonden.
 Wat niet werkte: Spec-tabellen waren code-documentatie, geen mapping-vergelijking. Drift-detectie hing aan re-validatie i.p.v. eerste pass.
 Voorstel: A4 verplicht maken: per hardcoded waarde direct vergelijken met Figma-instance. Drift bij eerste pass markeren, niet later. (Doorgevoerd in A4b.)
+
+[LESSON — 2026-05-05] [correctie]
+Situatie: Agent interpreteerde Figma's auto-paste "Implement this design from Figma." (uit *Copy Link* Dev mode) als user-instructie en deed token + button.tsx changes, gevolgd door revert.
+Wat niet werkte: Boilerplate-tekst werd verward met expliciete dev-task. Hard Rule #2 onbedoeld weggeredeneerd zonder dat user iets vroeg.
+Voorstel: Hard Rule #2 expliciet uitsplitsen wat wel/niet als code-update-trigger geldt. (Doorgevoerd in v2.4.)
 
 ## Verwijzingen
 
