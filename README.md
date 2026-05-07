@@ -112,6 +112,12 @@ figma2code/
     └── example-confirmation-modal/     ← filled example
 ```
 
+## Prerequisites — outside this skill
+
+**Figma hygiene matters.** This skill maps an existing Figma file to existing code. The quality of the mapping is bounded by the quality of the Figma source: clear frame names, semantic auto-layout, consistent variant decomposition. Messy Figma → messy MCP output → messy code, regardless of how well the mapping is documented. Cleaning up Figma is upstream design-ops work, outside this skill's scope.
+
+**Existing styleguide assumed.** The skill assumes a codebase with tokens (CSS variables, theme object, or Tailwind config) and component primitives already in place. Greenfield projects without a styleguide are out of scope — start there first, then layer mapping on top.
+
 ## What this is not
 
 - **Not a design-system documentation tool.** The goal is mapping, not a complete design-system layer.
