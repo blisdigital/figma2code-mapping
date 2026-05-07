@@ -249,7 +249,7 @@ Give the user a short summary before continuing.
 
 Document only tokens that the first component touches. Subsequent components extend the tables.
 
-> **Watch out — two parallel scales.** Some Figma kits (especially Tailwind-mirror kits like shadcn derivatives) have two parallel scales with overlapping prefix names: a **semantic scale** (`radius-md`, `radius-lg` for component design) next to a **utility scale** (`rounded-md`, `rounded-xl` as Tailwind class mirrors). Verify in `tokens.md` which scale a component actually uses. Document explicitly per category to prevent confusion.
+> **Watch out — two parallel scales.** Some Figma kits (especially Tailwind-mirror kits) have two parallel scales with overlapping prefix names: a **semantic scale** (`radius-md`, `radius-lg` for component design) next to a **utility scale** (`rounded-md`, `rounded-xl` as Tailwind class mirrors). Verify in `tokens.md` which scale a component actually uses. Document explicitly per category to prevent confusion.
 
 One row per token with:
 - Code path (how you use it in components)
