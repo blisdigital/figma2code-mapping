@@ -439,7 +439,7 @@ What did not work: Boilerplate text was confused with explicit dev task. Hard Ru
 Proposal: Make Hard Rule #2 explicitly split out what does/does not count as code-update trigger. (Implemented in v2.4.)
 
 [LESSON — 2026-05-05] [confirmation]
-Situation: get_design_context on shadcn-kit Button size symbols (1463:5702/5739/5737) returned MCP timeout. First pass stranded three items in verify-queue.
+Situation: get_design_context on Button size symbols in a complex Figma kit returned MCP timeout. First pass stranded three items in verify-queue.
 What worked: Retry with payload-reduction parameter (`excludeScreenshot: true` on fileKey-based MCP) succeeded directly on all 3 nodes. Cheaper than metadata split.
 Proposal: Extend A4a — payload reduction as first fallback for timeouts, before metadata split. (Implemented in v2.5.)
 
@@ -459,17 +459,17 @@ What worked: Documenting both MCPs explicitly with capability differences in the
 Proposal: Make MCP-server table + asset-URL dual-format explicit in Source mechanism. (Implemented in v2.6.)
 
 [LESSON — 2026-05-06] [confirmation]
-Situation: Mapping pass on shadcn-kit project with Dutch SKILL.md/README; LLM had to translate concepts internally before reasoning, sometimes losing precision on technical terms (e.g. "bron-verdeling" ↔ "source-of-truth allocation").
-What worked: Translating the entire skill (SKILL.md, README, templates) to English aligned terminology with library docs (Figma, shadcn, Tailwind, React) and reduced internal translation cost. Dutch nuance preserved in core principles ("drift = decision point, not debt").
+Situation: Mapping pass on a third-party Figma kit with Dutch SKILL.md/README; LLM had to translate concepts internally before reasoning, sometimes losing precision on technical terms (e.g. "bron-verdeling" ↔ "source-of-truth allocation").
+What worked: Translating the entire skill (SKILL.md, README, templates) to English aligned terminology with library docs (Figma, Tailwind, React) and reduced internal translation cost. Dutch nuance preserved in core principles ("drift = decision point, not debt").
 Proposal: Skill written in English; project-side mapping outputs may stay in any language the team prefers. (Implemented in v2.7.)
 
 [LESSON — 2026-05-08] [correction]
-Situation: Developer test (Pelle, 404 page on shadcn-kit project) showed mixed styling APIs in emitted code — Emotion `styled` AND className-direct on the same element. Two styling locations for the same element.
+Situation: Developer test on a 404 page in a third-party Figma kit project showed mixed styling APIs in emitted code — Emotion `styled` AND className-direct on the same element. Two styling locations for the same element.
 What did not work: Skill identified the styling-stack in A1 inventory but did not bind it as a fact for downstream consumption. Mapping had no place documenting "this project uses Emotion only — no className, no inline".
 Proposal: A1 produces explicit "Project styling stack" section in tokens.md as mapping-fact (API, theme access, not-used list). Future implementation-skill consumes for emit-time enforcement. Mapping documents; implementation enforces. (Implemented in v2.8.)
 
 [LESSON — 2026-05-08] [correction]
-Situation: Same Pelle test — emitted code introduced raw color values (`#fafafa` etc.) where matching tokens existed in `theme/tokens.ts`. Mapping had documented some values as bare "hardcoded" without verdict — leaving downstream emit no signal that a token was available.
+Situation: Same developer test — emitted code introduced raw color values (`#fafafa` etc.) where matching tokens existed in `theme/tokens.ts`. Mapping had documented some values as bare "hardcoded" without verdict — leaving downstream emit no signal that a token was available.
 What did not work: Mapping table column 3 allowed prose ("hardcoded") without a verdict. No structured way to flag "code uses raw, matching token exists" — implementation-skill can't enforce what mapping doesn't capture.
 Proposal: Hard rule #11 — every code-value row gets one of three verdicts (token-path / raw-token-available / raw-legitimate). A6 validation enforces. Mapping captures fact; implementation enforces emit-time. (Implemented in v2.9.)
 
@@ -479,7 +479,7 @@ What did not work: Three-level taxonomy forced page-as-organism collapsing. Page
 Proposal: A1 inventories all five levels organically — only levels with actual code-components surface in `components.md`. No forced empty categories. Pages/Templates as components get their own sections. (Implemented in v2.10.)
 
 [LESSON — 2026-05-08] [correction]
-Situation: Pelle's responsiveness loss on 404 page — emit produced absolute pixel-width where Figma was auto-layout fill. Token mapping (gap-8 → 8px) was in tokens.md, but no place documented "Figma fill ↔ flex-1" — semantic-intent translation had no home.
+Situation: Responsiveness loss on a 404 page in developer testing — emit produced absolute pixel-width where Figma was auto-layout fill. Token mapping (gap-8 → 8px) was in tokens.md, but no place documented "Figma fill ↔ flex-1" — semantic-intent translation had no home.
 What did not work: Token mapping captures values but not auto-layout primitives (fill, hug, direction). Implementation-skill cannot consume what mapping does not document.
 Proposal: Optional Auto-layout conventions section in tokens.md — only fill if project has consistent convention. Captures semantic-intent translation alongside token values. Implementation-skill consumes for emit-time auto-layout-to-CSS. (Implemented in v2.11.)
 
@@ -489,7 +489,7 @@ What did not work: Loose phrasing crossed scope-line. The discipline IS mapping 
 Proposal: Reframe with mapping-verbs (link, mark, document); add explicit "Mapping vs implementation" comparison table to SKILL.md; mirror to README/CLAUDE for scope-discipline anchor. (Implemented in v3.0.)
 
 [LESSON — 2026-05-08] [correction]
-Situation: Developer test feedback (Pelle) plus internal review showed that the skill name "figma-to-code" suggested code-generation responsibility — developers expected emit-time discipline. Skill scope is purely mapping; mismatch caused expectation-failures.
+Situation: Developer test feedback plus internal review showed that the skill name "figma-to-code" suggested code-generation responsibility — developers expected emit-time discipline. Skill scope is purely mapping; mismatch caused expectation-failures.
 What did not work: Naming implied a broader scope than the skill delivers. "figma-to-code" reads as full pipeline; reality is one half (mapping).
 Proposal: Rename to "figma-to-code-mapping" — explicit half-of-pipeline name. Reserves "figma-to-code-implement" namespace for the future emit-skill. Breaking change for projects with existing CLAUDE.md references; migration documented in README. (Implemented in v3.0.)
 
