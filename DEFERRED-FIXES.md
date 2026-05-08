@@ -2,7 +2,7 @@
 
 Audit of mapping-side gaps after v3.0. Re-evaluated 2026-05-08 against existing skill content; both initially proposed items turned out to be **already covered or non-critical**. This file is kept as an audit record (so we don't propose them again) rather than a fix-list.
 
-For implementation-side concerns (refuse-raw, single-API enforcement, auto-layout translation at emit, search-and-adopt), see [IMPLEMENT-SKILL-PROPOSAL.md](IMPLEMENT-SKILL-PROPOSAL.md).
+For implementation-side concerns (refuse-raw, single-API enforcement, auto-layout translation at emit, search-and-adopt), see `IMPLEMENT-SKILL-PROPOSAL.md` in the sibling `figma2code-implement` repo.
 
 ---
 
@@ -30,7 +30,7 @@ A skill-following LLM has no documented place to write outside these paths. The 
 
 **Audit result: gap is real, but the implement-skill workaround makes it non-critical.**
 
-The implement-skill (per [IMPLEMENT-SKILL-PROPOSAL §B3](IMPLEMENT-SKILL-PROPOSAL.md)) does a **live MCP fetch** on the target Figma frame before emit. It does not rely on cached layout-intent — it fetches fresh per emit-pass. Cache serves the mapping pass; emit serves itself.
+The implement-skill (per `IMPLEMENT-SKILL-PROPOSAL.md` §B3 in the sibling `figma2code-implement` repo) does a **live MCP fetch** on the target Figma frame before emit. It does not rely on cached layout-intent — it fetches fresh per emit-pass. Cache serves the mapping pass; emit serves itself.
 
 **Decision: do not enrich cache for layout-intent.** Implement-skill will fetch live. If a future workflow surfaces where cached layout-intent is actually consumed (e.g., bulk-validation across many components), revisit.
 
@@ -38,7 +38,7 @@ The implement-skill (per [IMPLEMENT-SKILL-PROPOSAL §B3](IMPLEMENT-SKILL-PROPOSA
 
 ## Open mapping-side items: none
 
-After this audit, no mapping-side gaps remain that should be addressed in the v3.x mapping skill. The remaining concerns from Pelle's feedback that are still unaddressed are all implementation-side and live in [IMPLEMENT-SKILL-PROPOSAL.md](IMPLEMENT-SKILL-PROPOSAL.md):
+After this audit, no mapping-side gaps remain that should be addressed in the v3.x mapping skill. The remaining concerns from Pelle's feedback that are still unaddressed are all implementation-side and live in `IMPLEMENT-SKILL-PROPOSAL.md` (sibling `figma2code-implement` repo):
 
 - Refuse-emit raw values where token-path exists
 - Single-styling-API enforcement at emit
