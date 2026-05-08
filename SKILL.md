@@ -1,22 +1,25 @@
 ---
-name: figma-to-code
-version: "2.11"
+name: figma-to-code-mapping
+version: "3.0"
 description: >
   Maps Figma designs onto an existing codebase via explicit documentation of tokens,
   components, and per-component specs. Use this skill when the user says
   "document this component", "map this Figma frame", "add X to the mapping",
-  or "update the tokens". Also triggers on "figma-to-code", "design-to-code", or
-  when the project repo contains a figma-to-code-mapping folder with tokens.md and
-  components.md.
+  or "update the tokens". Also triggers on "figma-to-code", "figma-to-code-mapping",
+  "design-to-code", or when the project repo contains a figma-to-code-mapping folder
+  with tokens.md and components.md.
   Goal: MCP code generation from Figma matches ≥90% with the existing codebase
-  because tokens and components are explicitly mapped to code paths. Scope is
-  mapping — not code implementation. Works for any project with an existing
+  because tokens and components are explicitly mapped to code paths. **Scope is
+  mapping — not code implementation.** A separate "figma-to-code-implement" skill
+  is on the roadmap for emit-time enforcement. Works for any project with an existing
   codebase plus Figma as design intent.
 ---
 
-# Figma-to-Code
+# Figma-to-Code Mapping
 
 Mapping skill that ensures Figma MCP code generation matches the existing codebase visually and stylistically. Per-component specs live **co-located next to the component file** (`<component-folder>/<name>.md` next to `<name>.tsx`); project-wide indexes in `docs/`.
+
+> **Scope.** This skill is **mapping only**. It documents the relationship between Figma and existing code. Code generation, emit-discipline, and enforcement of mapping conventions belong in a separate **figma-to-code-implement** skill (on the roadmap, not in this skill). Mapping enables; implementation enforces.
 
 ## Vision
 
@@ -48,7 +51,7 @@ Eleven rules that always apply, regardless of step. On conflict between sections
    > - Explicit user sentence per token: "update `--X` to Y", "add X in code", "implement this in code".
    > - Reviewed PR with file-by-file approval.
 3. **Apply the drift test to every candidate issue.** *"Would MCP code generation from this Figma node produce a visually wrong result?"* Yes → drift. No → another bucket (`verify-queue.md`, tech debt, or discard).
-4. **Consume existing — never regenerate.** For every Figma element: search for an existing code component first. Never generate a new version of something that already exists.
+4. **Map to existing components — never create new during mapping.** Every Figma element MUST be linked to an existing code component (in `components.md`). If no matching component exists → `component-missing` drift (Hard rule #9), do not auto-generate. Mapping documents the link; implementation will later consume it. Reframed in v2.12 with mapping-verbs (link, mark, document) instead of emit-verbs (consume, refuse, never generate).
 5. **Specs contain mapping data only.** No "When to use", "Edge cases", "What this adds", hover/focus narratives. Resolve visual confusability through Variant mapping and master-id, not through prose.
 6. **No improvising on gaps.** Unknown? `[VERIFY]` in the Figma-name column or stop and ask. No assumptions.
 7. **Ask for confirmation before code or doc changes.** Exception: A5 recursive Uses mapping in the same session — no separate permission per child component.
@@ -81,12 +84,28 @@ When yes, when no, and where to go instead.
 - Not drift detection as primary function — drift is briefly marked; mapping is the primary work.
 - Not a replacement for Figma Code Connect — where Code Connect exists, it handles the mapping automatically. This skill complements it by adding a drift loop on top.
 - Not behavior documentation — hover, focus, motion, keyboard handling live in code.
+- **Not code generation or emit-discipline.** This skill maps; it documents the relationship between Figma and existing code. Enforcing rules at code-emit time (refusing hardcoded values, picking layout primitives, translating auto-layout, search-and-adopt patterns) belongs in a separate implementation-skill — on the roadmap, not in this skill.
+
+## Mapping vs implementation — what this skill does and doesn't
+
+| | Mapping (this skill) | Implementation (future separate skill) |
+|---|---|---|
+| **Tokens** | Document tokens used in code → `tokens.md` (Hard rule #11 verdict per row) | Refuse hardcoded values where mapped tokens exist |
+| **Components** | Document components by atomic-level (3-5 levels organic) → `components.md` | Refuse to generate new components when existing ones fit |
+| **Styling stack** | Document the project's styling-stack as a fact (API + access + not-used) | Enforce single-API styling at code-emit time |
+| **Auto-layout** | Document project conventions (Figma fill/hug/gap → code expression) | Translate Figma auto-layout to concrete CSS at emit time |
+| **Drift** | Detect via drift test — never silently resolve | Surface drifts at emit; require designer/dev decision |
+| **Patterns** | Inventory Pages/Templates/Layout-primitives where they exist as components | Search-and-adopt existing patterns for non-componentized layouts |
+
+**Pattern: mapping enables, implementation enforces.** This skill prepares the ground-truth; an implementation-skill (TBD) will consume it.
+
+**Verb test for new rules.** Mapping verbs: *document, detect, inventory, mark, link, capture*. Implementation verbs: *consume, refuse, translate, search-and-adopt, apply, enforce*. On uncertainty about scope: park as note for the implementation-skill TBD.
 
 ## Slash commands
 
-- `/figma-to-code setup` — ask for confirmation, then create the `docs/` structure in the project repo
-- `/figma-to-code map <component>` — start mapping that component (full A1-A6)
-- `/figma-to-code init-claude-md` — show a markdown block to paste into the project CLAUDE.md
+- `/figma-to-code-mapping setup` — ask for confirmation, then create the `docs/` structure in the project repo. **Also adds `figma-context/` to project `.gitignore`** (or creates `.gitignore` if absent) — the cache should not be committed; node-data is regenerated on each MCP fetch.
+- `/figma-to-code-mapping map <component>` — start mapping that component (full A1-A6)
+- `/figma-to-code-mapping init-claude-md` — show a markdown block to paste into the project CLAUDE.md
 
 ## Source-of-truth allocation
 
@@ -463,6 +482,16 @@ Proposal: A1 inventories all five levels organically — only levels with actual
 Situation: Pelle's responsiveness loss on 404 page — emit produced absolute pixel-width where Figma was auto-layout fill. Token mapping (gap-8 → 8px) was in tokens.md, but no place documented "Figma fill ↔ flex-1" — semantic-intent translation had no home.
 What did not work: Token mapping captures values but not auto-layout primitives (fill, hug, direction). Implementation-skill cannot consume what mapping does not document.
 Proposal: Optional Auto-layout conventions section in tokens.md — only fill if project has consistent convention. Captures semantic-intent translation alongside token values. Implementation-skill consumes for emit-time auto-layout-to-CSS. (Implemented in v2.11.)
+
+[LESSON — 2026-05-08] [correction]
+Situation: Audit of Hard rule #4 against the verb-test (CLAUDE rule #6) showed three of three verbs were emit-flavor (consume, search...first, never generate). Rule had implementation-discipline phrasing while sitting in mapping-rules. Asymmetric to Hard rule #11 (token-verdict) which is fact-capture.
+What did not work: Loose phrasing crossed scope-line. The discipline IS mapping (don't shortcut by inventing components instead of linking existing), but verbs read as emit-time refusal.
+Proposal: Reframe with mapping-verbs (link, mark, document); add explicit "Mapping vs implementation" comparison table to SKILL.md; mirror to README/CLAUDE for scope-discipline anchor. (Implemented in v3.0.)
+
+[LESSON — 2026-05-08] [correction]
+Situation: Developer test feedback (Pelle) plus internal review showed that the skill name "figma-to-code" suggested code-generation responsibility — developers expected emit-time discipline. Skill scope is purely mapping; mismatch caused expectation-failures.
+What did not work: Naming implied a broader scope than the skill delivers. "figma-to-code" reads as full pipeline; reality is one half (mapping).
+Proposal: Rename to "figma-to-code-mapping" — explicit half-of-pipeline name. Reserves "figma-to-code-implement" namespace for the future emit-skill. Breaking change for projects with existing CLAUDE.md references; migration documented in README. (Implemented in v3.0.)
 
 ## References
 

@@ -1,4 +1,13 @@
-# Figma-to-Code skill
+# Figma-to-Code Mapping skill
+
+> **v3.0 — renamed from `figma-to-code` to `figma-to-code-mapping`.** Explicit
+> half-of-pipeline name. The skill maps Figma to existing code; it does not
+> generate code or enforce emit-discipline. A separate `figma-to-code-implement`
+> skill is on the roadmap for the emit half.
+>
+> Existing projects using `/figma-to-code` slash commands and a
+> `~/.claude/skills/figma-to-code` symlink need a one-time migration —
+> see [Migration from v2.x](#migration-from-v2x) below.
 
 Mapping skill for developers who want Figma MCP code generation to match an existing codebase ≥90%, without having to set up Figma Code Connect or Storybook.
 
@@ -22,7 +31,7 @@ This skill is a **developer tool**. Audience: developers working in a React/Vue/
 
 | Layer | Where | What |
 |---|---|---|
-| **Skill (this repo)** | `~/.claude/skills/figma-to-code/` (via symlink) | The method itself — automatically loaded by Claude Code |
+| **Skill (this repo)** | `~/.claude/skills/figma-to-code-mapping/` (via symlink) | The method itself — automatically loaded by Claude Code |
 | **Output (per project)** | `<your-project>/docs/` or `<your-project>/Figma-to-code/figma-to-code-mapping/` | The mapping docs that land in your repo (`tokens.md`, `components.md`, per-component specs, `drifts.md`, `verify-queue.md`) |
 
 The skill is project-agnostic and installed at user level; the mapping output lives in each project repo separately.
@@ -41,19 +50,19 @@ Full method and rules: see [SKILL.md](SKILL.md).
 
 ## Installation
 
-The recommended approach is a **symlink** from `~/.claude/skills/figma-to-code/` to this repo. Benefit: one source of truth — changes via `git pull` are immediately active in every project that uses the skill.
+The recommended approach is a **symlink** from `~/.claude/skills/figma-to-code-mapping/` to this repo. Benefit: one source of truth — changes via `git pull` are immediately active in every project that uses the skill.
 
 ```bash
 # Clone this repo
 git clone https://github.com/blisdigital/figma2code.git ~/Github/figma2code
 
 # Symlink into ~/.claude/skills/
-ln -s ~/Github/figma2code ~/.claude/skills/figma-to-code
+ln -s ~/Github/figma2code ~/.claude/skills/figma-to-code-mapping
 
 # Verify
 claude
 > /skills
-# Should show figma-to-code
+# Should show figma-to-code-mapping
 ```
 
 To update:
@@ -68,7 +77,7 @@ cd ~/Github/figma2code && git pull
 ```
 $ cd /path/to/project
 $ claude
-> /figma-to-code setup
+> /figma-to-code-mapping setup
 ```
 
 The skill asks whether it may create the `docs/` structure. On confirmation: copies `tokens.md`, `components.md`, `drifts.md`, `verify-queue.md`, and the `components/` template into the project repo.
@@ -76,7 +85,7 @@ The skill asks whether it may create the `docs/` structure. On confirmation: cop
 ### Permanently activate in project repo
 
 ```
-> /figma-to-code init-claude-md
+> /figma-to-code-mapping init-claude-md
 ```
 
 Shows a markdown block to paste into the project `CLAUDE.md`. From then on the skill triggers automatically in every chat — no slash command needed.
@@ -84,13 +93,13 @@ Shows a markdown block to paste into the project `CLAUDE.md`. From then on the s
 ### Document a component
 
 ```
-> /figma-to-code map ConfirmationModal
+> /figma-to-code-mapping map ConfirmationModal
 ```
 
 Or natural language:
 
 ```
-> Document ConfirmationModal following our figma-to-code method
+> Document ConfirmationModal following our figma-to-code-mapping method
 ```
 
 The skill walks through A1-A6: inventory, fill tokens, create component spec, Figma mapping (incl. drift test), recursive Uses, validation checklist.
@@ -123,6 +132,28 @@ figma2code/
 - **Not a design-system documentation tool.** The goal is mapping, not a complete design-system layer.
 - **Not a replacement for Figma Code Connect — a complement instead.** Code Connect binds Figma components to code snippets via `.figma.ts` files in the repo (requires a Figma Organization seat). This skill works freemium and with markdown, and adds something Code Connect does not: **drift detection as a loop**. Code Connect maps one-to-one; this skill detects when code and Figma drift apart and logs it as a decision point for designer or dev. The two approaches combine — Code Connect for mapping publication to Figma Dev Mode, this skill for the drift loop.
 - **Not behavior documentation.** Hover, focus, motion, keyboard handling live in code, not in specs.
-- **Not code generation.** The skill maps; MCP generates. Mapping is a policy layer, not a translator.
+- **Not code generation or emit-discipline.** This skill maps; it documents the relationship between Figma and existing code. Enforcing rules at code-emit time (refusing hardcoded values, picking layout primitives, translating auto-layout, search-and-adopt patterns) belongs in a separate **figma-to-code-implement** skill — on the roadmap, not in this skill.
 
 Full skill boundary including routing to sister skills: see [SKILL.md § Skill boundary](SKILL.md#skill-boundary).
+
+## Migration from v2.x
+
+The skill was renamed from `figma-to-code` to `figma-to-code-mapping` in v3.0 to clarify that this skill maps Figma to code — it does not generate or emit code. A separate `figma-to-code-implement` skill is on the roadmap for the emit half.
+
+If you have an existing v2.x setup, run a one-time migration:
+
+```bash
+# 1. Pull the latest skill
+cd ~/Github/figma2code && git pull
+
+# 2. Replace the symlink
+rm ~/.claude/skills/figma-to-code
+ln -s ~/Github/figma2code ~/.claude/skills/figma-to-code-mapping
+
+# 3. Update slash commands in any project CLAUDE.md
+#    /figma-to-code map     → /figma-to-code-mapping map
+#    /figma-to-code setup   → /figma-to-code-mapping setup
+#    /figma-to-code init-claude-md → /figma-to-code-mapping init-claude-md
+```
+
+Existing project mapping output (`tokens.md`, `components.md`, per-component specs, `drifts.md`, `verify-queue.md`) requires no changes. Only the skill name and slash commands change.

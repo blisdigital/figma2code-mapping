@@ -1,6 +1,6 @@
 # Claude-md snippet for the project repo
 
-When a user invokes `/figma-to-code init-claude-md`, show the following markdown block plus instructions. **Do not write to CLAUDE.md yourself.** The user pastes it.
+When a user invokes `/figma-to-code-mapping init-claude-md`, show the following markdown block plus instructions. **Do not write to CLAUDE.md yourself.** The user pastes it.
 
 ---
 
@@ -9,8 +9,8 @@ When a user invokes `/figma-to-code init-claude-md`, show the following markdown
 A short intro:
 
 > Here is the markdown block you can paste into `CLAUDE.md` of your project repo (root).
-> After that, the figma-to-code skill triggers automatically in every chat in this project —
-> without having to type `/figma-to-code`.
+> After that, the figma-to-code-mapping skill triggers automatically in every chat in this project —
+> without having to type `/figma-to-code-mapping`.
 >
 > **Placement:**
 > - If `CLAUDE.md` does not yet exist in the project-repo root, create it with this block as content
@@ -21,8 +21,8 @@ Then the block in a markdown code fence:
 ````markdown
 ## Figma-to-code method
 
-This project uses the figma-to-code skill for mapping between Figma designs and code.
-For any work on components, tokens, or Figma mapping: use the figma-to-code skill.
+This project uses the figma-to-code-mapping skill for mapping between Figma designs and code.
+For any work on components, tokens, or Figma mapping: use the figma-to-code-mapping skill.
 
 **Method in short:**
 - Code is source of truth, Figma is intent
@@ -35,11 +35,11 @@ For any work on components, tokens, or Figma mapping: use the figma-to-code skil
 - Read before write, no improvising on gaps, organisms first on selection
 - Drift is briefly marked via the drift test, not extensively reported
 
-**Full method:** `~/.claude/skills/figma-to-code/SKILL.md`
+**Full method:** `~/.claude/skills/figma-to-code-mapping/SKILL.md`
 
 **Slash commands:**
-- `/figma-to-code map <component>` — document a component (full A1-A6)
-- `/figma-to-code setup` — create `docs/` structure (first time only)
+- `/figma-to-code-mapping map <component>` — document a component (full A1-A6)
+- `/figma-to-code-mapping setup` — create `docs/` structure (first time only)
 ````
 
 ## What the user does next
