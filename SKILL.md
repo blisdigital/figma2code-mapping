@@ -1,6 +1,6 @@
 ---
 name: figma-to-code-mapping
-version: "3.0"
+version: "3.1"
 description: >
   Maps Figma designs onto an existing codebase via explicit documentation of tokens,
   components, and per-component specs. Use this skill when the user says
@@ -51,7 +51,7 @@ Eleven rules that always apply, regardless of step. On conflict between sections
    > - Explicit user sentence per token: "update `--X` to Y", "add X in code", "implement this in code".
    > - Reviewed PR with file-by-file approval.
 3. **Apply the drift test to every candidate issue.** *"Would MCP code generation from this Figma node produce a visually wrong result?"* Yes → drift. No → another bucket (`verify-queue.md`, tech debt, or discard).
-4. **Map to existing components — never create new during mapping.** Every Figma element MUST be linked to an existing code component (in `components.md`). If no matching component exists → `component-missing` drift (Hard rule #9), do not auto-generate. Mapping documents the link; implementation will later consume it. Reframed in v2.12 with mapping-verbs (link, mark, document) instead of emit-verbs (consume, refuse, never generate).
+4. **Map to existing components — never create new during mapping.** Every Figma element MUST be linked to an existing code component (in `components.md`). If no matching component exists → `component-missing` drift (Hard rule #9), do not auto-generate. Mapping documents the link; implementation will later consume it.
 5. **Specs contain mapping data only.** No "When to use", "Edge cases", "What this adds", hover/focus narratives. Resolve visual confusability through Variant mapping and master-id, not through prose.
 6. **No improvising on gaps.** Unknown? `[VERIFY]` in the Figma-name column or stop and ask. No assumptions.
 7. **Ask for confirmation before code or doc changes.** Exception: A5 recursive Uses mapping in the same session — no separate permission per child component.
@@ -81,10 +81,8 @@ When yes, when no, and where to go instead.
 
 **What this is not:**
 - Not a design-system documentation tool — the goal is mapping, not building a complete design layer.
-- Not drift detection as primary function — drift is briefly marked; mapping is the primary work.
 - Not a replacement for Figma Code Connect — where Code Connect exists, it handles the mapping automatically. This skill complements it by adding a drift loop on top.
 - Not behavior documentation — hover, focus, motion, keyboard handling live in code.
-- **Not code generation or emit-discipline.** This skill maps; it documents the relationship between Figma and existing code. Enforcing rules at code-emit time (refusing hardcoded values, picking layout primitives, translating auto-layout, search-and-adopt patterns) belongs in a separate implementation-skill — on the roadmap, not in this skill.
 
 ## Mapping vs implementation — what this skill does and doesn't
 
@@ -99,21 +97,36 @@ When yes, when no, and where to go instead.
 
 **Pattern: mapping enables, implementation enforces.** This skill prepares the ground-truth; an implementation-skill (TBD) will consume it.
 
-**Verb test for new rules.** Mapping verbs: *document, detect, inventory, mark, link, capture*. Implementation verbs: *consume, refuse, translate, search-and-adopt, apply, enforce*. On uncertainty about scope: park as note for the implementation-skill TBD.
-
 ## Slash commands
 
 - `/figma-to-code-mapping setup` — ask for confirmation, then create the `docs/` structure in the project repo. **Also adds `figma-context/` to project `.gitignore`** (or creates `.gitignore` if absent) — the cache should not be committed; node-data is regenerated on each MCP fetch.
 - `/figma-to-code-mapping map <component>` — start mapping that component (full A1-A6)
 - `/figma-to-code-mapping init-claude-md` — show a markdown block to paste into the project CLAUDE.md
 
-## Source-of-truth allocation
+## The documents
 
-**Figma is intent.** What needs to come, which screens, which new components.
+| Document | Location | Purpose |
+|---|---|---|
+| `tokens.md` | `docs/` | Three-column mapping (Figma name → code path → value) |
+| `components.md` | `docs/` | Index with Uses column and atomic-design classification |
+| `<name>.md` (atom/molecule/organism) | **next to `<name>.tsx`** in the same folder | Per component: spec, props, states, mapping to Figma |
+| `<name>.md` (template) | **next to `page.tsx`** in the same route folder | Page-level mapping |
+| `drifts.md` | `docs/` | Central drift aggregator (drift-test passers only) |
+| `verify-queue.md` | `docs/` | `[VERIFY]` items for the next live MCP session |
 
-**Code is truth.** Which tokens and components exist, with which values.
+**Co-location convention:** per-component specs live next to the component they document — not in a separate `docs/components/` folder. Benefit: on refactor/rename the spec automatically moves along, and code review sees immediately whether the spec was updated. Project-wide indexes (`tokens.md`, `components.md`, `drifts.md`, `verify-queue.md`) stay in `docs/`.
 
-On conflict, code wins. Mark drift explicitly; do not silently resolve it.
+Templates live in `templates/`. The `setup` command copies them into the project repo.
+
+## What to read when
+
+| Task | Read first |
+|---|---|
+| Check or add token value | `tokens.md` |
+| Build or use component | `components.md`, relevant `<component-folder>/<name>.md` |
+| Map Figma frame to code | `components.md`, involved specs; refresh `figma-context/<node-id>.json` via MCP when available |
+| Make drift decision | `drifts.md` (existing), spec of the involved component, `verify-queue.md` |
+| Encounter unknown Figma name | `verify-queue.md` (possibly already known), otherwise add a new `[VERIFY]` item |
 
 ## Source mechanism
 
@@ -179,38 +192,9 @@ Three rules apply to both URL formats:
 
 When a Figma asset is neither in code nor coming from MCP: stop and ask the user. Do not improvise with a lookalike.
 
-## The documents
+## Component selection — atomic level
 
-| Document | Location | Purpose |
-|---|---|---|
-| `tokens.md` | `docs/` | Three-column mapping (Figma name → code path → value) |
-| `components.md` | `docs/` | Index with Uses column and atomic-design classification |
-| `<name>.md` (atom/molecule/organism) | **next to `<name>.tsx`** in the same folder | Per component: spec, props, states, mapping to Figma |
-| `<name>.md` (template) | **next to `page.tsx`** in the same route folder | Page-level mapping |
-| `drifts.md` | `docs/` | Central drift aggregator (drift-test passers only) |
-| `verify-queue.md` | `docs/` | `[VERIFY]` items for the next live MCP session |
-
-**Co-location convention:** per-component specs live next to the component they document — not in a separate `docs/components/` folder. Benefit: on refactor/rename the spec automatically moves along, and code review sees immediately whether the spec was updated. Project-wide indexes (`tokens.md`, `components.md`, `drifts.md`, `verify-queue.md`) stay in `docs/`.
-
-Templates live in `templates/`. The `setup` command copies them into the project repo.
-
-## What to read when
-
-| Task | Read first |
-|---|---|
-| Check or add token value | `tokens.md` |
-| Build or use component | `components.md`, relevant `<component-folder>/<name>.md` |
-| Map Figma frame to code | `components.md`, involved specs; refresh `figma-context/<node-id>.json` via MCP when available |
-| Make drift decision | `drifts.md` (existing), spec of the involved component, `verify-queue.md` |
-| Encounter unknown Figma name | `verify-queue.md` (possibly already known), otherwise add a new `[VERIFY]` item |
-
-## Component selection
-
-Two rules that work together (Hard rule #4 + atomic order):
-
-**1. Consume existing — never regenerate.** For every Figma element: first search whether a matching code component exists (via `components.md`, a `src/components/` scan, or Code Connect). If yes: import and use. Never generate a new version — a deviating use is either a prop choice, drift, or a legitimate reason to extend the existing component.
-
-**2. Pick the highest atomic level that fits.** When several valid code components could match: prefer Pages > Templates > Organisms > Molecules > Atoms. Do not combine loose atoms when a higher-order component already does the job.
+Hard rule #4 says: link to an existing component. When several existing components could match, **pick the highest atomic level that fits** — prefer Pages > Templates > Organisms > Molecules > Atoms. Do not combine loose atoms when a higher-order component already does the job.
 
 Brad Frost atomic-design — five levels:
 
@@ -220,9 +204,9 @@ Brad Frost atomic-design — five levels:
 - **Template** — layout skeleton without content (AppShell, ErrorLayout, DashboardLayout)
 - **Page** — concrete page instance with content (NotFoundPage, UserDashboardPage)
 
-> **Organic adoption.** The skill does NOT force all five levels. `components.md` grows organically from what exists in code. A project with only `src/components/ui/` may have just Atoms/Molecules/Organisms — that's fine. A project with `src/templates/` and `src/pages/` (or `app/(routes)/*.tsx` componentized) gets the upper levels added. Categories with zero entries do not appear in the actual project doc.
+> **Organic adoption.** `components.md` grows from what exists in code. A project with only `src/components/ui/` may have just Atoms/Molecules/Organisms. A project with `src/templates/` or `src/pages/` (or `app/(routes)/*.tsx` componentized) gets those levels added. Categories with zero entries do not appear in the actual project doc.
 
-When in doubt: pick the lower level. On complete absence of a matching component → `component-missing` drift, do not auto-generate (Hard rule #9).
+When in doubt: pick the lower level.
 
 ## Drift — short and pragmatic
 
@@ -410,91 +394,9 @@ At the end of every component mapping (before commit/sync) walk through these 8 
 
 Tick off in the spec under "Drift notes": *"Spec last validated: [date] (A6 walked through)."*
 
-## Lessons learned
-
-Record when a rule **did not work** (correction needed) **and** when a rule **did work** (deliberately repeat). Strict format, max 5 lines per entry. New entries at the bottom.
-
-```
-[LESSON — YYYY-MM-DD] [type: correction | confirmation]
-Situation: <what happened, 1 line>
-What worked (or did not): <observation, 1-2 lines>
-Proposal: <change rule or keep, 1 line>
-```
-
----
-
-[LESSON — 2026-05-05] [confirmation]
-Situation: Live MCP test on modal frame `16599:2645` after strict drift test + mapping-only specs.
-What worked: Drift test as filter worked: 7 candidates in, 5 real drifts, 0 noise. 2 new Button drifts found (padding-x 24 vs 20, radius 40 vs 44).
-Proposal: Keep drift test + mapping-only specs — right regime for MCP code-generation quality.
-
-[LESSON — 2026-05-05] [correction]
-Situation: First Button mapping noted only code values ("16px 24px | theme.spacing.lg + xl") without Figma comparison. Drifts found only in re-validation.
-What did not work: Spec tables were code documentation, not mapping comparison. Drift detection hung on re-validation instead of the first pass.
-Proposal: Make A4 mandatory: per hardcoded value, compare directly with Figma instance. Mark drift on first pass, not later. (Implemented in A4b.)
-
-[LESSON — 2026-05-05] [correction]
-Situation: Agent interpreted Figma's auto-paste "Implement this design from Figma." (from *Copy Link* Dev mode) as a user instruction and made token + button.tsx changes, followed by revert.
-What did not work: Boilerplate text was confused with explicit dev task. Hard Rule #2 inadvertently reasoned away without the user asking.
-Proposal: Make Hard Rule #2 explicitly split out what does/does not count as code-update trigger. (Implemented in v2.4.)
-
-[LESSON — 2026-05-05] [confirmation]
-Situation: get_design_context on Button size symbols in a complex Figma kit returned MCP timeout. First pass stranded three items in verify-queue.
-What worked: Retry with payload-reduction parameter (`excludeScreenshot: true` on fileKey-based MCP) succeeded directly on all 3 nodes. Cheaper than metadata split.
-Proposal: Extend A4a — payload reduction as first fallback for timeouts, before metadata split. (Implemented in v2.5.)
-
-[LESSON — 2026-05-05] [correction]
-Situation: Pass 1 (Accordion only) marked 14 tokens as figma-missing. Pass 2 on Button page proved that 6 of those do exist in Figma — just not on Accordion. One large correction needed in tokens.md + drifts.md.
-What did not work: Single-node `get_variable_defs` is scope-limited to what that node consumes. False-positive `figma-missing` flags arise automatically from a limited query set.
-Proposal: A4 warning — query at least 3 component pages from different categories before declaring `figma-missing` definitive. (Implemented in v2.6.)
-
-[LESSON — 2026-05-05] [correction]
-Situation: Pass 2 concluded primary-hover used a white/12 overlay based on Button-page-level vars. Pass 3 (per-symbol query on 73:3668) showed that primary-hover uses chart-1 + opacity:0.9 — no white/12.
-What did not work: Page-level `get_variable_defs` aggregates vars; identity per variant/state is lost. Conclusions about hover mechanism on aggregated data are structurally fragile.
-Proposal: Add A4d — query State=hover/focus/active symbols separately for accurate mapping. (Implemented in v2.6.)
-
-[LESSON — 2026-05-05] [confirmation]
-Situation: Live MCP tests confirm asset URLs differ per MCP server: `localhost:3845/...` (desktop-active) vs `figma.com/api/mcp/asset/...` (fileKey-based, 7-day TTL). Plus: fileKey-MCP supports `excludeScreenshot`, desktop-MCP does not.
-What worked: Documenting both MCPs explicitly with capability differences in the skill helps agents pick which tool fits batch vs eyes-on work.
-Proposal: Make MCP-server table + asset-URL dual-format explicit in Source mechanism. (Implemented in v2.6.)
-
-[LESSON — 2026-05-06] [confirmation]
-Situation: Mapping pass on a third-party Figma kit with Dutch SKILL.md/README; LLM had to translate concepts internally before reasoning, sometimes losing precision on technical terms (e.g. "bron-verdeling" ↔ "source-of-truth allocation").
-What worked: Translating the entire skill (SKILL.md, README, templates) to English aligned terminology with library docs (Figma, Tailwind, React) and reduced internal translation cost. Dutch nuance preserved in core principles ("drift = decision point, not debt").
-Proposal: Skill written in English; project-side mapping outputs may stay in any language the team prefers. (Implemented in v2.7.)
-
-[LESSON — 2026-05-08] [correction]
-Situation: Developer test on a 404 page in a third-party Figma kit project showed mixed styling APIs in emitted code — Emotion `styled` AND className-direct on the same element. Two styling locations for the same element.
-What did not work: Skill identified the styling-stack in A1 inventory but did not bind it as a fact for downstream consumption. Mapping had no place documenting "this project uses Emotion only — no className, no inline".
-Proposal: A1 produces explicit "Project styling stack" section in tokens.md as mapping-fact (API, theme access, not-used list). Future implementation-skill consumes for emit-time enforcement. Mapping documents; implementation enforces. (Implemented in v2.8.)
-
-[LESSON — 2026-05-08] [correction]
-Situation: Same developer test — emitted code introduced raw color values (`#fafafa` etc.) where matching tokens existed in `theme/tokens.ts`. Mapping had documented some values as bare "hardcoded" without verdict — leaving downstream emit no signal that a token was available.
-What did not work: Mapping table column 3 allowed prose ("hardcoded") without a verdict. No structured way to flag "code uses raw, matching token exists" — implementation-skill can't enforce what mapping doesn't capture.
-Proposal: Hard rule #11 — every code-value row gets one of three verdicts (token-path / raw-token-available / raw-legitimate). A6 validation enforces. Mapping captures fact; implementation enforces emit-time. (Implemented in v2.9.)
-
-[LESSON — 2026-05-08] [correction]
-Situation: Earlier skill referenced atomic-design but only documented three levels (Atoms/Molecules/Organisms). Brad Frost's framework has five — Templates and Pages — and many projects (Next.js apps, dashboard apps) have these as code-components yet no place to document them.
-What did not work: Three-level taxonomy forced page-as-organism collapsing. Pages with their own tokens/styling fell out of mapping scope when they should be in.
-Proposal: A1 inventories all five levels organically — only levels with actual code-components surface in `components.md`. No forced empty categories. Pages/Templates as components get their own sections. (Implemented in v2.10.)
-
-[LESSON — 2026-05-08] [correction]
-Situation: Responsiveness loss on a 404 page in developer testing — emit produced absolute pixel-width where Figma was auto-layout fill. Token mapping (gap-8 → 8px) was in tokens.md, but no place documented "Figma fill ↔ flex-1" — semantic-intent translation had no home.
-What did not work: Token mapping captures values but not auto-layout primitives (fill, hug, direction). Implementation-skill cannot consume what mapping does not document.
-Proposal: Optional Auto-layout conventions section in tokens.md — only fill if project has consistent convention. Captures semantic-intent translation alongside token values. Implementation-skill consumes for emit-time auto-layout-to-CSS. (Implemented in v2.11.)
-
-[LESSON — 2026-05-08] [correction]
-Situation: Audit of Hard rule #4 against the verb-test (CLAUDE rule #6) showed three of three verbs were emit-flavor (consume, search...first, never generate). Rule had implementation-discipline phrasing while sitting in mapping-rules. Asymmetric to Hard rule #11 (token-verdict) which is fact-capture.
-What did not work: Loose phrasing crossed scope-line. The discipline IS mapping (don't shortcut by inventing components instead of linking existing), but verbs read as emit-time refusal.
-Proposal: Reframe with mapping-verbs (link, mark, document); add explicit "Mapping vs implementation" comparison table to SKILL.md; mirror to README/CLAUDE for scope-discipline anchor. (Implemented in v3.0.)
-
-[LESSON — 2026-05-08] [correction]
-Situation: Developer test feedback plus internal review showed that the skill name "figma-to-code" suggested code-generation responsibility — developers expected emit-time discipline. Skill scope is purely mapping; mismatch caused expectation-failures.
-What did not work: Naming implied a broader scope than the skill delivers. "figma-to-code" reads as full pipeline; reality is one half (mapping).
-Proposal: Rename to "figma-to-code-mapping" — explicit half-of-pipeline name. Reserves "figma-to-code-implement" namespace for the future emit-skill. Breaking change for projects with existing CLAUDE.md references; migration documented in README. (Implemented in v3.0.)
-
 ## References
 
+- `LESSONS.md` — append-only history of what worked / what did not (read for evolution context, not application)
 - `templates/tokens.md` — empty tokens template
 - `templates/components.md` — empty components-index template
 - `templates/component-spec.md` — template for a single component spec
