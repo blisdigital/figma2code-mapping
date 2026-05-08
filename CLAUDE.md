@@ -16,7 +16,7 @@ Every change to `SKILL.md` or `templates/` becomes active after `git pull` in ev
 
 1. **Branch + PR required.** Direct push to `main` is blocked by hooks. Always work on a feature branch with a descriptive name (`skill-<what>`, e.g. `skill-asset-handling-validation-boundary`).
 2. **One type of change per PR.** Split feature additions, readability restructures, and template changes into separate PRs. Mixing makes review and rollback hard.
-3. **Lessons-learned format strict.** Max 5 lines per entry, exact fields: `Situation`, `What worked (or did not)`, `Proposal`. Date + type (correction | confirmation) in the header. No free text around it.
+3. **Lessons-learned go in `LESSONS.md`, not `SKILL.md`.** Max 5 lines per entry, exact fields: `Situation`, `What worked (or did not)`, `Proposal`. Date + type (correction | confirmation) in the header. Append at the bottom; never edit older entries (history matters). No free text around the entries.
 4. **Bump version in frontmatter** on every significant change to `SKILL.md`. Patch (2.0 → 2.1) for refinements, minor (2.x → 3.0) on behavior changes that affect existing mappings.
 5. **Do not write templates into projects.** Changes to `templates/` only land in *new* projects via `/figma-to-code-mapping setup`. Existing mapping docs in projects stay untouched — by design, to avoid migration pain.
 6. **Hold the mapping/implementation line.** When considering a new rule, ask: does the skill *document* this (mapping) or *enforce* this at code-emit time (implementation)? Verbs like "consume", "refuse", "translate", "search-and-adopt", "apply" usually signal implementation territory. Mapping verbs are "document", "detect", "inventory", "mark", "link", "capture". On uncertainty: park as note for the future `figma-to-code-implement` skill TBD.
@@ -32,7 +32,7 @@ When in doubt whether something belongs in `SKILL.md` or `CLAUDE.md`: **does it 
 
 ## Writing lessons-learned
 
-For every significant lesson (both corrections and confirmations) one entry at the bottom of `SKILL.md § Lessons learned`:
+For every significant lesson (both corrections and confirmations) one entry **at the bottom of `LESSONS.md`** (not in SKILL.md — keeps the application-time skill light):
 
 ```
 [LESSON — YYYY-MM-DD] [type: correction | confirmation]
@@ -42,6 +42,8 @@ Proposal: <change rule or keep, 1 line>
 ```
 
 No longer. No vaguer. On overflow: split into two entries or the lesson is not sharply enough formulated.
+
+When a lesson's proposal becomes a Hard rule or method change, mark the rule itself in SKILL.md but do not add the version-implemented suffix to the lesson — the lesson stays factual about the situation, the rule is the resolution.
 
 ## Reference
 
