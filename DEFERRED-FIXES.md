@@ -1,65 +1,55 @@
-# Deferred mapping-side fixes
+# Deferred mapping-side fixes — audit log
 
-Items that **belong in the mapping skill** but were not implemented in v3.0. Written after the v3.0 audit against Pelle's developer test feedback (2026-05-08).
+Audit of mapping-side gaps after v3.0. Re-evaluated 2026-05-08 against existing skill content; both initially proposed items turned out to be **already covered or non-critical**. This file is kept as an audit record (so we don't propose them again) rather than a fix-list.
 
-These are **not** items deferred because they belong in the future `figma-to-code-implement` skill — those are listed in [IMPLEMENT-SKILL-PROPOSAL.md](IMPLEMENT-SKILL-PROPOSAL.md). The items below are mapping-discipline gaps the current skill should close.
-
----
-
-## 1. Cache enrichment for auto-layout intent
-
-**Source:** Pelle's #3 — "design hoeft niet EXACT te zijn. Bare MCP gaf comments over hoeveel-bij-hoeveel achtergrond moest zijn." Pelle saw responsiveness intent in MCP output that figma2code lost.
-
-**Current state.** `figma-context/<node-id>.json` cache stores:
-- Node metadata (name, type, dimensions, position)
-- Variables consumed by the node (from `get_variable_defs`)
-- Metadata-XML tree
-
-It does **not** capture per-instance auto-layout properties (fill/hug, gap percentages, padding values, alignment). PR 4 (v2.11) added project-level auto-layout-conventions as mapping data — but the per-instance intent that needs translation is not preserved in cache.
-
-**Why mapping-side, not implement-skill.** Caching what MCP returns is mapping-data capture (Hard rule #11 spirit: capture facts, don't lose them). Implement-skill cannot consume what mapping does not preserve.
-
-**Proposed fix.**
-- A4 MCP-fetch step also calls `get_design_context` and stores the auto-layout properties returned (e.g., `layout: { mode: "VERTICAL", primaryAxisSizingMode: "FIXED", counterAxisSizingMode: "AUTO", itemSpacing: 16, paddingLeft: 24, ... }`) in the cache JSON under a new `layout_intent` key.
-- A6 validation: confirm `layout_intent` is present in cache for nodes with auto-layout.
-- No mapping-table change — this is cache enrichment for downstream consumption.
-
-**Estimated impact:** small SKILL.md edit to A4 + cache JSON schema extension. ~20 lines.
+For implementation-side concerns (refuse-raw, single-API enforcement, auto-layout translation at emit, search-and-adopt), see [IMPLEMENT-SKILL-PROPOSAL.md](IMPLEMENT-SKILL-PROPOSAL.md).
 
 ---
 
-## 2. Hard rule about skill output locations
+## #1 Output-location discipline — already adequate
 
-**Source:** Pelle's #2 — "de figma2code publiceerde in een random file opens de figma context key, had ik ff gemist". Pelle saw the skill writing somewhere unexpected.
+**Initial concern.** Pelle observed figma2code "publiceerde in een random file de figma context key" — skill writing somewhere unexpected. Initial proposal: add Hard rule #12 forcing all skill output to standardized paths.
 
-**Current state.** PR #20 v3.0 added `.gitignore` setup-step for `figma-context/`. That covers cache. But the skill currently has no rule **forbidding** writes outside the standardized paths. If the LLM during a mapping pass decides to write debug output, scratch files, or auxiliary data somewhere else, nothing stops it.
+**Audit result: convention is already in the skill, no Hard rule needed.**
 
-**Why mapping-side, not implement-skill.** Output-discipline is meta-skill behavior, not emit-discipline. Both mapping and implement skills should respect a write-perimeter.
+| Output | Documented in SKILL.md | Strict? |
+|---|---|---|
+| `docs/tokens.md`, `components.md`, `drifts.md`, `verify-queue.md` | "The documents" table + intro paragraph | implicit |
+| `<component-folder>/<name>.md` (per-component specs co-located) | "Co-location convention" sub-section | explicit |
+| `figma-context/<node-id>.json` (cache) | "Cache + hash check" sub-section + setup-step `.gitignore` | explicit + operational |
 
-**Proposed fix as Hard rule #12:**
+A skill-following LLM has no documented place to write outside these paths. The negative rule ("never write elsewhere") is implicit. Pelle's failure was likely a figma2code (pre-rename, pre-v3.0) bug — not a gap the new skill permits.
 
-```markdown
-12. **Output to standardized paths only.** The skill writes to:
-    - `docs/tokens.md`, `docs/components.md`, `docs/drifts.md`,
-      `docs/verify-queue.md` (or repo-equivalent paths)
-    - `<component-folder>/<name>.md` for per-component specs
-    - `figma-context/<node-id>.json` for cache
-    - Project `.gitignore` (one-time, only during setup)
-
-    Never write debug output, scratch files, temporary auxiliary data, or
-    notes to other locations. If the agent needs to record something
-    not covered by the above, ask the user where it should live —
-    don't improvise a file path.
-```
-
-**Estimated impact:** SKILL.md Hard rules expanded from 11 to 12. Symmetrical with existing rules in scope-discipline. ~10 lines.
+**Decision: do not add Hard rule #12.** Convention is adequate. Belt-and-suspenders without evidence of recurring gap.
 
 ---
 
-## Status
+## #2 Cache enrichment with auto-layout intent — gap exists, work-around adequate
 
-These two are not blockers for v3.0 to be useful. They are gaps in mapping-side discipline that should land in v3.1 or v3.2 before significant new mapping passes are run on additional projects.
+**Initial concern.** `figma-context/<node-id>.json` cache stores variables + metadata-XML + mapping-link, but does not store per-instance auto-layout properties (`layoutMode`, `primaryAxisSizingMode`, `itemSpacing`, padding values) returned by `get_design_context`. Initial proposal: enrich cache with `layout_intent` key.
 
-**Priority:** medium — neither has caused a failure on the projects mapped so far, but both are pre-empting categories of failure that have one anecdotal data point.
+**Audit result: gap is real, but the implement-skill workaround makes it non-critical.**
 
-**Owner:** unassigned. Open to PR.
+The implement-skill (per [IMPLEMENT-SKILL-PROPOSAL §B3](IMPLEMENT-SKILL-PROPOSAL.md)) does a **live MCP fetch** on the target Figma frame before emit. It does not rely on cached layout-intent — it fetches fresh per emit-pass. Cache serves the mapping pass; emit serves itself.
+
+**Decision: do not enrich cache for layout-intent.** Implement-skill will fetch live. If a future workflow surfaces where cached layout-intent is actually consumed (e.g., bulk-validation across many components), revisit.
+
+---
+
+## Open mapping-side items: none
+
+After this audit, no mapping-side gaps remain that should be addressed in the v3.x mapping skill. The remaining concerns from Pelle's feedback that are still unaddressed are all implementation-side and live in [IMPLEMENT-SKILL-PROPOSAL.md](IMPLEMENT-SKILL-PROPOSAL.md):
+
+- Refuse-emit raw values where token-path exists
+- Single-styling-API enforcement at emit
+- Apply auto-layout conventions at emit time
+- Hoist truly-needed-once values to page-level CSS variables
+- Search-and-adopt patterns for non-componentized layouts
+
+These belong in `figma-to-code-implement` (TBD), not in the mapping skill.
+
+---
+
+## Process note
+
+This audit is itself a useful artefact — both initial proposals sounded like real gaps before being checked against the skill's existing content. Going forward: before adding to a "deferred fixes" list, grep the skill for related rules first. If convention exists, document the convention rather than propose a duplicate.
