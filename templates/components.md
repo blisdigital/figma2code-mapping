@@ -7,19 +7,25 @@ atomic design.
 > lives in `src/components/`. This index shows *what* exists, *what-uses-what*, and
 > which Figma node belongs to it.
 
-## Atomic design — three levels
+## Atomic design — five levels (organic)
 
-**Atoms** are indivisible. Buttons, inputs, icons, labels, badges.
+Brad Frost atomic-design has five levels. This index grows organically — only
+levels with actual code-components in this project appear below. Categories
+with zero entries are removed.
 
-**Molecules** are compositions of atoms with one shared purpose.
+- **Atoms** — indivisible (Button, Input, Icon, Badge)
+- **Molecules** — compositions of atoms with one shared purpose
+- **Organisms** — complex compositions with own state, scroll, or keyboard navigation
+- **Templates** *(if `src/templates/` or similar exists)* — layout skeleton without content (AppShell, ErrorLayout, DashboardLayout)
+- **Pages** *(if `src/pages/` or `app/(routes)/*.tsx` exports page-components)* — concrete page instances (NotFoundPage, UserDashboardPage)
 
-**Organisms** are complex compositions with their own state, scroll behavior, or
-keyboard navigation.
+If a project has no Templates or Pages as code-components, those sections do
+not appear in this doc. Force no empty categories.
 
-## Selection order — organisms first
+## Selection order — highest level that fits
 
-When mapping a Figma frame to code: **first check whether an organism fits, then
-molecules, then atoms.** Do not combine atoms when a higher-order component
+When mapping a Figma frame to code: **prefer Pages > Templates > Organisms >
+Molecules > Atoms.** Do not combine atoms when a higher-order component
 already exists.
 
 ## Writing convention
@@ -49,3 +55,20 @@ already exists.
 | Component | Uses | Description | Detail | Figma |
 |---|---|---|---|---|
 | | | | | |
+
+<!--
+## Templates (only if project has Templates as code-components)
+
+| Component | Uses | Description | Detail | Figma |
+|---|---|---|---|---|
+| | | | | |
+
+## Pages (only if project has Pages as code-components)
+
+| Component | Uses | Description | Detail | Figma |
+|---|---|---|---|---|
+| | | | | |
+-->
+
+> **Note.** Uncomment Templates / Pages sections only when the codebase has
+> them as actual exported components. Force no empty categories.

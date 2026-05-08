@@ -1,6 +1,6 @@
 ---
 name: figma-to-code
-version: "2.9"
+version: "2.10"
 description: >
   Maps Figma designs onto an existing codebase via explicit documentation of tokens,
   components, and per-component specs. Use this skill when the user says
@@ -191,11 +191,17 @@ Two rules that work together (Hard rule #4 + atomic order):
 
 **1. Consume existing — never regenerate.** For every Figma element: first search whether a matching code component exists (via `components.md`, a `src/components/` scan, or Code Connect). If yes: import and use. Never generate a new version — a deviating use is either a prop choice, drift, or a legitimate reason to extend the existing component.
 
-**2. Organism first, then molecules, then atoms.** When several valid code components could match: pick the highest atomic level that fits. Do not combine loose atoms when a molecule or organism already does the job.
+**2. Pick the highest atomic level that fits.** When several valid code components could match: prefer Pages > Templates > Organisms > Molecules > Atoms. Do not combine loose atoms when a higher-order component already does the job.
+
+Brad Frost atomic-design — five levels:
 
 - **Atom** — indivisible (Button, Input, Icon, Badge)
 - **Molecule** — composition of atoms with one shared purpose
 - **Organism** — has its own state, scroll behavior, or keyboard handling
+- **Template** — layout skeleton without content (AppShell, ErrorLayout, DashboardLayout)
+- **Page** — concrete page instance with content (NotFoundPage, UserDashboardPage)
+
+> **Organic adoption.** The skill does NOT force all five levels. `components.md` grows organically from what exists in code. A project with only `src/components/ui/` may have just Atoms/Molecules/Organisms — that's fine. A project with `src/templates/` and `src/pages/` (or `app/(routes)/*.tsx` componentized) gets the upper levels added. Categories with zero entries do not appear in the actual project doc.
 
 When in doubt: pick the lower level. On complete absence of a matching component → `component-missing` drift, do not auto-generate (Hard rule #9).
 
@@ -244,6 +250,7 @@ Scan the existing codebase. Identify:
 - Which component folders exist (`src/components/ui/`, etc.)
 - Which format styles use (CSS modules, Emotion, styled-components, etc.)
 - **Styling stack as a fact** — which API the project uses for styling, exclusively. See "Styling stack" requirement below.
+- **Atomic-design layers present in code** — does the project have `src/templates/` (Templates as components) or `src/pages/` / `app/(routes)/*.tsx` exporting page-components (Pages)? Document which of the five atomic-design levels exist. If only Atoms/Molecules/Organisms exist, `components.md` stays at three sections. If Templates/Pages also exist as code-components, they get their own sections in `components.md`. See "Component selection" above for the five-level taxonomy.
 
 Give the user a short summary before continuing.
 
@@ -444,6 +451,11 @@ Proposal: A1 produces explicit "Project styling stack" section in tokens.md as m
 Situation: Same Pelle test — emitted code introduced raw color values (`#fafafa` etc.) where matching tokens existed in `theme/tokens.ts`. Mapping had documented some values as bare "hardcoded" without verdict — leaving downstream emit no signal that a token was available.
 What did not work: Mapping table column 3 allowed prose ("hardcoded") without a verdict. No structured way to flag "code uses raw, matching token exists" — implementation-skill can't enforce what mapping doesn't capture.
 Proposal: Hard rule #11 — every code-value row gets one of three verdicts (token-path / raw-token-available / raw-legitimate). A6 validation enforces. Mapping captures fact; implementation enforces emit-time. (Implemented in v2.9.)
+
+[LESSON — 2026-05-08] [correction]
+Situation: Earlier skill referenced atomic-design but only documented three levels (Atoms/Molecules/Organisms). Brad Frost's framework has five — Templates and Pages — and many projects (Next.js apps, dashboard apps) have these as code-components yet no place to document them.
+What did not work: Three-level taxonomy forced page-as-organism collapsing. Pages with their own tokens/styling fell out of mapping scope when they should be in.
+Proposal: A1 inventories all five levels organically — only levels with actual code-components surface in `components.md`. No forced empty categories. Pages/Templates as components get their own sections. (Implemented in v2.10.)
 
 ## References
 
