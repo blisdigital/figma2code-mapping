@@ -1,15 +1,8 @@
 # Figma-to-Code Mapping skill
 
-> **v3.0 — renamed from `figma-to-code` to `figma-to-code-mapping`.** Explicit
-> half-of-pipeline name. The skill maps Figma to existing code; it does not
-> generate code or enforce emit-discipline. A separate `figma-to-code-implement`
-> skill is on the roadmap for the emit half.
->
-> Existing projects using `/figma-to-code` slash commands and a
-> `~/.claude/skills/figma-to-code` symlink need a one-time migration —
-> see [Migration from v2.x](#migration-from-v2x) below.
-
 Mapping skill for developers who want Figma MCP code generation to match an existing codebase ≥90%, without having to set up Figma Code Connect or Storybook.
+
+Scope is **mapping only** — the skill documents the relationship between Figma and existing code. It does not generate code or enforce emit-discipline. A separate `figma-to-code-implement` skill is on the roadmap for the emit half.
 
 ## Vision
 
@@ -135,25 +128,3 @@ figma2code/
 - **Not code generation or emit-discipline.** This skill maps; it documents the relationship between Figma and existing code. Enforcing rules at code-emit time (refusing hardcoded values, picking layout primitives, translating auto-layout, search-and-adopt patterns) belongs in a separate **figma-to-code-implement** skill — on the roadmap, not in this skill.
 
 Full skill boundary including routing to sister skills: see [SKILL.md § Skill boundary](SKILL.md#skill-boundary).
-
-## Migration from v2.x
-
-The skill was renamed from `figma-to-code` to `figma-to-code-mapping` in v3.0 to clarify that this skill maps Figma to code — it does not generate or emit code. A separate `figma-to-code-implement` skill is on the roadmap for the emit half.
-
-If you have an existing v2.x setup, run a one-time migration:
-
-```bash
-# 1. Pull the latest skill
-cd ~/Github/figma2code && git pull
-
-# 2. Replace the symlink
-rm ~/.claude/skills/figma-to-code
-ln -s ~/Github/figma2code ~/.claude/skills/figma-to-code-mapping
-
-# 3. Update slash commands in any project CLAUDE.md
-#    /figma-to-code map     → /figma-to-code-mapping map
-#    /figma-to-code setup   → /figma-to-code-mapping setup
-#    /figma-to-code init-claude-md → /figma-to-code-mapping init-claude-md
-```
-
-Existing project mapping output (`tokens.md`, `components.md`, per-component specs, `drifts.md`, `verify-queue.md`) requires no changes. Only the skill name and slash commands change.

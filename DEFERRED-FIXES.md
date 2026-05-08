@@ -1,6 +1,6 @@
 # Deferred mapping-side fixes — audit log
 
-Audit of mapping-side gaps after v3.0. Re-evaluated 2026-05-08 against existing skill content; both initially proposed items turned out to be **already covered or non-critical**. This file is kept as an audit record (so we don't propose them again) rather than a fix-list.
+Audit of mapping-side gaps after v3.0. Re-evaluated against existing skill content; both initially proposed items turned out to be **already covered or non-critical**. This file is kept as an audit record (so we don't propose them again) rather than a fix-list.
 
 For implementation-side concerns (refuse-raw, single-API enforcement, auto-layout translation at emit, search-and-adopt), see `IMPLEMENT-SKILL-PROPOSAL.md` in the sibling `figma2code-implement` repo.
 
@@ -8,7 +8,7 @@ For implementation-side concerns (refuse-raw, single-API enforcement, auto-layou
 
 ## #1 Output-location discipline — already adequate
 
-**Initial concern.** Pelle observed figma2code "publiceerde in een random file de figma context key" — skill writing somewhere unexpected. Initial proposal: add Hard rule #12 forcing all skill output to standardized paths.
+**Initial concern.** Developer test reported the skill writing the Figma context key into an unexpected file. Initial proposal: add Hard rule #12 forcing all skill output to standardized paths.
 
 **Audit result: convention is already in the skill, no Hard rule needed.**
 
@@ -18,7 +18,7 @@ For implementation-side concerns (refuse-raw, single-API enforcement, auto-layou
 | `<component-folder>/<name>.md` (per-component specs co-located) | "Co-location convention" sub-section | explicit |
 | `figma-context/<node-id>.json` (cache) | "Cache + hash check" sub-section + setup-step `.gitignore` | explicit + operational |
 
-A skill-following LLM has no documented place to write outside these paths. The negative rule ("never write elsewhere") is implicit. Pelle's failure was likely a figma2code (pre-rename, pre-v3.0) bug — not a gap the new skill permits.
+A skill-following LLM has no documented place to write outside these paths. The negative rule ("never write elsewhere") is implicit. The reported failure was likely a pre-rename, pre-v3.0 bug — not a gap the new skill permits.
 
 **Decision: do not add Hard rule #12.** Convention is adequate. Belt-and-suspenders without evidence of recurring gap.
 
@@ -38,7 +38,7 @@ The implement-skill (per `IMPLEMENT-SKILL-PROPOSAL.md` §B3 in the sibling `figm
 
 ## Open mapping-side items: none
 
-After this audit, no mapping-side gaps remain that should be addressed in the v3.x mapping skill. The remaining concerns from Pelle's feedback that are still unaddressed are all implementation-side and live in `IMPLEMENT-SKILL-PROPOSAL.md` (sibling `figma2code-implement` repo):
+After this audit, no mapping-side gaps remain that should be addressed in the v3.x mapping skill. The remaining concerns from developer-test feedback that are still unaddressed are all implementation-side and live in `IMPLEMENT-SKILL-PROPOSAL.md` (sibling `figma2code-implement` repo):
 
 - Refuse-emit raw values where token-path exists
 - Single-styling-API enforcement at emit
