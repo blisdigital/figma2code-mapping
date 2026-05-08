@@ -1,6 +1,6 @@
 ---
 name: figma-to-code
-version: "2.7"
+version: "2.8"
 description: >
   Maps Figma designs onto an existing codebase via explicit documentation of tokens,
   components, and per-component specs. Use this skill when the user says
@@ -242,8 +242,29 @@ Scan the existing codebase. Identify:
 - Where tokens live (CSS variables, theme object, Tailwind config, mix)
 - Which component folders exist (`src/components/ui/`, etc.)
 - Which format styles use (CSS modules, Emotion, styled-components, etc.)
+- **Styling stack as a fact** — which API the project uses for styling, exclusively. See "Styling stack" requirement below.
 
 Give the user a short summary before continuing.
+
+#### Styling stack — document as project fact
+
+A1 must produce an explicit styling-stack section in `tokens.md` (or a new `styling-stack.md` if cleaner per project). Format example:
+
+```markdown
+## Project styling stack
+
+- **API:** Emotion `styled()` + `css={}` only
+- **Theme access:** `import theme from 'theme'` → `theme.X`
+- **Not used:** className-direct, inline-styles, Tailwind, styled-components, CSS modules
+```
+
+Three rules:
+
+1. **One API only.** Document which styling API the project uses exclusively. If the project mixes APIs (e.g., legacy CSS modules + new Emotion), document both and note which is canonical for new work.
+2. **What is NOT used.** Explicit "not used" list prevents downstream code-emit (in implementation-skill TBD) from introducing parallel paradigms. Without this list, any LLM operating on the codebase can reasonably "add Tailwind for this one thing".
+3. **Theme/token access pattern.** Document the canonical import — `import theme from 'theme'`, `import { tokens } from '@/lib/tokens'`, etc. — so emit knows the convention.
+
+This is mapping-data (a fact about the codebase), not implementation-discipline. The future implementation-skill consumes this to enforce single-API styling at code-emit time. Mapping documents; implementation enforces.
 
 ### A2. Fill tokens.md (incrementally)
 
@@ -411,6 +432,11 @@ Proposal: Make MCP-server table + asset-URL dual-format explicit in Source mecha
 Situation: Mapping pass on shadcn-kit project with Dutch SKILL.md/README; LLM had to translate concepts internally before reasoning, sometimes losing precision on technical terms (e.g. "bron-verdeling" ↔ "source-of-truth allocation").
 What worked: Translating the entire skill (SKILL.md, README, templates) to English aligned terminology with library docs (Figma, shadcn, Tailwind, React) and reduced internal translation cost. Dutch nuance preserved in core principles ("drift = decision point, not debt").
 Proposal: Skill written in English; project-side mapping outputs may stay in any language the team prefers. (Implemented in v2.7.)
+
+[LESSON — 2026-05-08] [correction]
+Situation: Developer test (Pelle, 404 page on shadcn-kit project) showed mixed styling APIs in emitted code — Emotion `styled` AND className-direct on the same element. Two styling locations for the same element.
+What did not work: Skill identified the styling-stack in A1 inventory but did not bind it as a fact for downstream consumption. Mapping had no place documenting "this project uses Emotion only — no className, no inline".
+Proposal: A1 produces explicit "Project styling stack" section in tokens.md as mapping-fact (API, theme access, not-used list). Future implementation-skill consumes for emit-time enforcement. Mapping documents; implementation enforces. (Implemented in v2.8.)
 
 ## References
 

@@ -31,6 +31,21 @@ touches. Subsequent components extend the tables.
 
 ---
 
+## Project styling stack
+
+> **Mapping fact, not implementation rule.** This documents *what the codebase
+> uses*. The future implementation-skill (TBD) will consume this to enforce
+> single-API styling at code-emit time. Mapping documents; implementation enforces.
+
+- **API:** [e.g., Emotion `styled()` + `css={}`, or Tailwind classes only, or CSS modules, or styled-components]
+- **Theme access:** [e.g., `import theme from 'theme'` → `theme.X`, or `var(--name)` from `:root`, or `tw-prefix-X`]
+- **Not used:** [explicit list — e.g., "className-direct, inline-styles, Tailwind, styled-components, CSS modules" — prevents parallel paradigms in downstream emit]
+
+If the project mixes APIs (e.g., legacy CSS modules alongside new Emotion), document
+both and mark which is canonical for new work.
+
+---
+
 ## Color
 
 | Code path | Figma name | Value | Use |
