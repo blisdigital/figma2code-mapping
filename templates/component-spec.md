@@ -42,6 +42,13 @@
 |---|---|---|
 | [...] | [...] | [...] |
 
+> **Token-verdict mandatory (Hard rule #11).** Every row's third column has one of three verdicts:
+> - **Token-path** (e.g., `theme.neutral.N100`) — code uses token correctly
+> - **`(raw, token available: <path>)`** — code uses raw value but matching token exists; flag for future implementation-skill
+> - **`(raw, legitimate — no matching token)`** — no token exists for this value (e.g., `margin: 0` reset)
+>
+> No bare "hardcoded" entries. Mapping captures the fact; implementation enforces.
+
 ### Variant mapping (only when component has variants or states)
 
 [Disambiguation for MCP: which Figma variant matches which code result.]

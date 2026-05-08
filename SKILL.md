@@ -1,6 +1,6 @@
 ---
 name: figma-to-code
-version: "2.8"
+version: "2.9"
 description: >
   Maps Figma designs onto an existing codebase via explicit documentation of tokens,
   components, and per-component specs. Use this skill when the user says
@@ -34,7 +34,7 @@ The skill delivers this through five mechanisms (see [README § Vision](README.m
 
 ## Hard rules
 
-Ten rules that always apply, regardless of step. On conflict between sections: these win.
+Eleven rules that always apply, regardless of step. On conflict between sections: these win.
 
 1. **Read before you write.** Read relevant mapping docs (`tokens.md`, `components.md`, per-component spec) before changing or mapping anything.
 2. **Code is source of truth.** Figma is intent. On conflict, code wins; mark drift, do not silently resolve it.
@@ -54,7 +54,8 @@ Ten rules that always apply, regardless of step. On conflict between sections: t
 7. **Ask for confirmation before code or doc changes.** Exception: A5 recursive Uses mapping in the same session — no separate permission per child component.
 8. **Asset handling: existing → MCP-localhost → never new.** Reuse project assets; otherwise use the localhost URL directly from the MCP payload. No new icon packages, no placeholders.
 9. **`component-missing` — do not auto-generate.** Mark it; the developer creates the code component before mapping continues.
-10. **A6 validation checklist mandatory at end of every pass.** 7 checks (layout / typography / colors / states / assets / literal strings / drift test). Do not skip.
+10. **A6 validation checklist mandatory at end of every pass.** 8 checks (layout / typography / colors / states / assets / literal strings / token-verdict / drift test). Do not skip.
+11. **Token-verdict mandatory in mapping tables.** Every code-value documented in a mapping table receives one of three verdicts in the third column: (a) the matching token-path (e.g., `theme.neutral.N100`), (b) `(raw, token available: <path>)` — code uses raw but a matching token exists; mapping captures this fact for future implementation-skill enforcement, or (c) `(raw, legitimate — no matching token)`. No bare "hardcoded" entries without a verdict. Mapping must give implementation-skill the data it needs to enforce single-source styling later.
 
 ## Skill boundary
 
@@ -366,7 +367,7 @@ When code is genuinely missing (component does not exist while Figma shows one):
 
 ### A6. Validation checklist (closing per mapping pass)
 
-At the end of every component mapping (before commit/sync) walk through these 7 checks explicitly. Drift test is a filter (what am I going to mark?); this checklist is positive (did I let nothing slip silently?).
+At the end of every component mapping (before commit/sync) walk through these 8 checks explicitly. Drift test is a filter (what am I going to mark?); this checklist is positive (did I let nothing slip silently?).
 
 | # | Check | Where validated |
 |---|---|---|
@@ -376,7 +377,8 @@ At the end of every component mapping (before commit/sync) walk through these 7 
 | 4 | **States** — variants and states (hover/focus/active/disabled) mapped where Figma shows them | Variant-mapping subsection |
 | 5 | **Assets** — SVG/icon/image sources reference existing project assets or MCP-localhost URL — no new imports, no placeholders | Mapping table "Icon-source / Asset" |
 | 6 | **Literal strings** — `aria-label`, `alt`, `placeholder`, `title`, hardcoded labels in code are mapped (code value + source) | Mapping table "Text" or separate row "Aria-label" |
-| 7 | **Drift test passed** — candidate issues classified: drift, verify-queue, or discarded | `drifts.md` + `verify-queue.md` |
+| 7 | **Token-verdict per row** — every code-value row in the mapping table has a verdict in column 3 (token-path / raw-token-available / raw-legitimate). No bare "hardcoded" entries. | Mapping tables |
+| 8 | **Drift test passed** — candidate issues classified: drift, verify-queue, or discarded | `drifts.md` + `verify-queue.md` |
 
 Tick off in the spec under "Drift notes": *"Spec last validated: [date] (A6 walked through)."*
 
@@ -437,6 +439,11 @@ Proposal: Skill written in English; project-side mapping outputs may stay in any
 Situation: Developer test (Pelle, 404 page on shadcn-kit project) showed mixed styling APIs in emitted code — Emotion `styled` AND className-direct on the same element. Two styling locations for the same element.
 What did not work: Skill identified the styling-stack in A1 inventory but did not bind it as a fact for downstream consumption. Mapping had no place documenting "this project uses Emotion only — no className, no inline".
 Proposal: A1 produces explicit "Project styling stack" section in tokens.md as mapping-fact (API, theme access, not-used list). Future implementation-skill consumes for emit-time enforcement. Mapping documents; implementation enforces. (Implemented in v2.8.)
+
+[LESSON — 2026-05-08] [correction]
+Situation: Same Pelle test — emitted code introduced raw color values (`#fafafa` etc.) where matching tokens existed in `theme/tokens.ts`. Mapping had documented some values as bare "hardcoded" without verdict — leaving downstream emit no signal that a token was available.
+What did not work: Mapping table column 3 allowed prose ("hardcoded") without a verdict. No structured way to flag "code uses raw, matching token exists" — implementation-skill can't enforce what mapping doesn't capture.
+Proposal: Hard rule #11 — every code-value row gets one of three verdicts (token-path / raw-token-available / raw-legitimate). A6 validation enforces. Mapping captures fact; implementation enforces emit-time. (Implemented in v2.9.)
 
 ## References
 
