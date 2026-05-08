@@ -1,6 +1,6 @@
 ---
 name: figma-to-code
-version: "2.10"
+version: "2.11"
 description: >
   Maps Figma designs onto an existing codebase via explicit documentation of tokens,
   components, and per-component specs. Use this skill when the user says
@@ -286,6 +286,8 @@ One row per token with:
 - Value
 - Use (short explanation)
 
+> **Optional: Auto-layout conventions section.** If the project has a consistent convention for translating Figma's auto-layout primitives (fill, hug, direction) to code expressions (`flex-1`, `w-fit`, `flex-col`), document it in `tokens.md § Auto-layout conventions`. Token values are already in the token tables; this section captures the *semantic-intent translation* (fill, hug, direction) that does not map to a single token. Skip when patterns are ad-hoc — forced documentation of inconsistency creates overhead. See template for format.
+
 ### A3. Document the first component
 
 Choose one representative component together with the user. For that component:
@@ -456,6 +458,11 @@ Proposal: Hard rule #11 — every code-value row gets one of three verdicts (tok
 Situation: Earlier skill referenced atomic-design but only documented three levels (Atoms/Molecules/Organisms). Brad Frost's framework has five — Templates and Pages — and many projects (Next.js apps, dashboard apps) have these as code-components yet no place to document them.
 What did not work: Three-level taxonomy forced page-as-organism collapsing. Pages with their own tokens/styling fell out of mapping scope when they should be in.
 Proposal: A1 inventories all five levels organically — only levels with actual code-components surface in `components.md`. No forced empty categories. Pages/Templates as components get their own sections. (Implemented in v2.10.)
+
+[LESSON — 2026-05-08] [correction]
+Situation: Pelle's responsiveness loss on 404 page — emit produced absolute pixel-width where Figma was auto-layout fill. Token mapping (gap-8 → 8px) was in tokens.md, but no place documented "Figma fill ↔ flex-1" — semantic-intent translation had no home.
+What did not work: Token mapping captures values but not auto-layout primitives (fill, hug, direction). Implementation-skill cannot consume what mapping does not document.
+Proposal: Optional Auto-layout conventions section in tokens.md — only fill if project has consistent convention. Captures semantic-intent translation alongside token values. Implementation-skill consumes for emit-time auto-layout-to-CSS. (Implemented in v2.11.)
 
 ## References
 

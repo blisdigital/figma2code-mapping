@@ -46,6 +46,30 @@ both and mark which is canonical for new work.
 
 ---
 
+## Auto-layout conventions (optional)
+
+> **Optional section.** Fill this in only if the project has a consistent convention
+> for translating Figma's auto-layout primitives (fill, hug, direction, gap) to code.
+> If patterns are ad-hoc or inconsistent, leave this section empty / remove. Forced
+> documentation of inconsistent patterns creates maintenance overhead.
+
+> **Mapping fact, not implementation rule.** Documents the project's translation of
+> Figma's structural intent. Token values (gap-8, padding-16) are already in the
+> token tables above; this section captures the *semantic-intent translation* (fill,
+> hug, direction) that does not map to a single token.
+
+| Figma | Code expression |
+|---|---|
+| Direction: vertical | [e.g. `flex flex-col`, or `<Stack>`, or `display: flex; flex-direction: column`] |
+| Direction: horizontal | [e.g. `flex flex-row`, or `<Inline>`] |
+| Fill (primary axis) | [e.g. `flex-1`, or `flex: 1`, or `<Box flex={1}>`] |
+| Hug | [e.g. `w-fit h-fit`, or natural sizing] |
+| Wrap | [e.g. `flex-wrap`, or `<Stack wrap>`] |
+| Distribute: space-between | [e.g. `justify-between`] |
+| Align: center | [e.g. `items-center`] |
+
+---
+
 ## Color
 
 | Code path | Figma name | Value | Use |
