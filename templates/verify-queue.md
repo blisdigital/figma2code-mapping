@@ -17,6 +17,8 @@ On the next mapping pass the mapping agent reads these entries and resolves them
 
 A `[VERIFY]` item becomes a drift the moment it has been confirmed via MCP/code check that the rendered output ≠ Figma. Until then: here, not in `drifts.md`.
 
+**Exception — `frame-considered-not-promoted` entries** are not drift candidates. They are cross-session decision-memos so the next mapping pass does not re-propose the same promotion. They never become drifts; they remain recorded until the underlying frame disappears from Figma.
+
 ---
 
 ## Open

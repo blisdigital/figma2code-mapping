@@ -357,9 +357,7 @@ During normal A4 work the agent may notice — without a separate scan step — 
 - Variables enumerated in `get_variable_defs(frame)` overlap heavily with that component's documented vars, AND
 - Structural archetype matches (e.g., single text-node in clickable container with radius + padding = button-archetype).
 
-When alignment is incidentally obvious (not the result of hunting), surface it: *"Frame X data aligns with the Button component (name + tokens + structure). Promote as Frame ↔ code-component with figma-master-missing note? This also writes a drift to drifts.md."*
-
-**User always gates.** Structure ≠ intent — even strong alignment may be a deliberate one-off (e.g., a marketing CTA that looks like Button but should not be templated). Hard rule #7 applies. Friction is low because strong alignments are rare in practice.
+When alignment is incidentally obvious (not the result of hunting), surface it and let the user gate per Hard rule #7: *"Frame X data aligns with the Button component (name + tokens + structure). Promote as Frame ↔ code-component with figma-master-missing note? This also writes a drift to drifts.md."*
 
 **User confirmed →**
 
@@ -367,11 +365,7 @@ When alignment is incidentally obvious (not the result of hunting), surface it: 
 - Component-spec required (per Hard rule #4 case 2)
 - Add drift to `drifts.md`: "Figma frame X should be component-instance of Y (data-alignment, user-confirmed)"
 
-**User refused → element-frame** (token-only). Document in spec that the agent considered but user opted out, prevents re-asking on next pass.
-
-**Vibe-guard.** Alignment is judged on enumerable data (name string, var list, structural archetype). No pixel-vibes, no "looks like". If the only connection is visual resemblance, it is an element-frame. When in doubt: element-frame is the safe default — messy Figma is upstream design-ops work, not mapping's job to outsmart.
-
-**No systematic scan.** Mapping does not actively hunt for hidden components across the file. Promotion is opportunistic — when the data the agent already has in front of it strongly aligns, surface it; otherwise move on.
+**User refused → element-frame** (token-only). Note in spec that the agent considered but user opted out, prevents re-asking. Record in `verify-queue.md` per Entry sources.
 
 #### A4a. MCP fetch order for large/complex nodes
 
