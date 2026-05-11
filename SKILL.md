@@ -1,6 +1,6 @@
 ---
 name: figma-to-code-mapping
-version: "3.3"
+version: "3.5"
 description: >
   Maps Figma designs onto an existing codebase via explicit documentation of tokens,
   components, and per-component specs. Use this skill when the user says
@@ -71,7 +71,7 @@ Eleven rules that always apply, regardless of step. On conflict between sections
 5. **Specs contain mapping data only.** No "When to use", "Edge cases", "What this adds", hover/focus narratives. Resolve visual confusability through Variant mapping and master-id, not through prose.
 6. **No improvising on gaps.** Unknown? `[VERIFY]` in the Figma-name column or stop and ask. No assumptions.
 7. **Ask for confirmation before code or doc changes.** Exception: A5 recursive Uses mapping in the same session — no separate permission per child component.
-8. **Asset handling: existing → MCP-localhost → never new.** Reuse project assets; otherwise use the localhost URL directly from the MCP payload. No new icon packages, no placeholders.
+8. **Asset handling: registry + reuse → MCP-localhost → never new.** Every Figma image-node is recorded in `tokens.md § Asset-mapping registry` (Figma node-id → project asset path → status). Reuse project assets; otherwise use the localhost URL directly from the MCP payload. No new icon packages, no placeholders. Mapping documents the registry; the sister `figma-to-code-implement` skill materialises (downloads) the assets to the registered path at emit time. Mapping never writes asset files itself.
 9. **`component-missing` — do not auto-generate.** Mark it; the developer creates the code component before mapping continues.
 10. **A6 validation checklist mandatory at end of every pass.** 8 checks (layout / typography / colors / states / assets / literal strings / token-verdict / drift test). Do not skip.
 11. **Token-verdict mandatory in mapping tables.** Every code-value documented in a mapping table receives one of three verdicts in the third column: (a) the matching token-path (e.g., `theme.neutral.N100`), (b) `(raw, token available: <path>)` — code uses raw but a matching token exists; mapping captures this fact for future implementation-skill enforcement, or (c) `(raw, legitimate — no matching token)`. No bare "hardcoded" entries without a verdict. Mapping must give implementation-skill the data it needs to enforce single-source styling later.
@@ -115,7 +115,7 @@ When yes, when no, and where to go instead.
 
 ## Slash commands
 
-- `/figma-to-code-mapping setup` — ask for confirmation, then create the `docs/` structure in the project repo. **Also adds `figma-context/` to project `.gitignore`** (or creates `.gitignore` if absent) — the cache should not be committed; node-data is regenerated on each MCP fetch.
+- `/figma-to-code-mapping setup` — ask for confirmation, then create the `docs/` structure in the project repo. **Adds `figma-context/` to project `.gitignore`** (or creates `.gitignore` if absent) — the cache should not be committed; node-data is regenerated on each MCP fetch. **Setup fails hard if `.gitignore` cannot be written** (missing write-permission, read-only mount, or the rule cannot be appended). The cache contains MCP context and tokens that must never reach a public commit; setup will not silently fall through this guard.
 - `/figma-to-code-mapping map <component>` — start mapping that component (full A1-A6)
 - `/figma-to-code-mapping init-claude-md` — show a markdown block to paste into the project CLAUDE.md
 
@@ -231,7 +231,7 @@ Three rules apply to both URL formats:
 
 1. **Search for existing assets first.** If the codebase already has an asset that represents this Figma asset (e.g. `images/icons/ui/close.svg?react` for a close icon), use it. Map in the spec under the mapping table: `Icon-source | images/icons/ui/close.svg?react | local SVG import`.
 2. **Do not install new icon packages.** No `npm install lucide-react`, no `@mui/icons-material` import "just in case". All assets come from existing project assets or directly from the Figma MCP payload URL.
-3. **No placeholders.** When MCP returns an asset URL: use it directly, or download the asset once to the project's convention location and map there. Never leave a placeholder or TODO comment.
+3. **No placeholders.** Register every Figma image-node in `tokens.md § Asset-mapping registry` per A4e. Mapping never writes a TODO comment or leaves a `[VERIFY]` placeholder for assets. The registered path is the contract; the sister `figma-to-code-implement` skill materialises the file at emit time.
 
 When a Figma asset is neither in code nor coming from MCP: stop and ask the user. Do not improvise with a lookalike.
 
@@ -300,9 +300,11 @@ Scan the existing codebase. Identify:
 
 Give the user a short summary before continuing.
 
-#### Styling stack — document as project fact
+#### Styling stack — document as project fact (mandatory)
 
-A1 must produce an explicit styling-stack section in `tokens.md` (or a new `styling-stack.md` if cleaner per project). Format example:
+A1 must produce an explicit `## Project styling stack` section in `tokens.md`. **This section is mandatory** — setup creates it pre-filled with a `[REQUIRED — fill before first map]` placeholder. The first `map X` halts before A2 if the placeholder is still in place; A6 check 0b verifies the section is filled on every subsequent pass.
+
+Format example:
 
 ```markdown
 ## Project styling stack
@@ -315,12 +317,14 @@ A1 must produce an explicit styling-stack section in `tokens.md` (or a new `styl
 Three rules:
 
 1. **One API only.** Document which styling API the project uses exclusively. If the project mixes APIs (e.g., legacy CSS modules + new Emotion), document both and note which is canonical for new work.
-2. **What is NOT used.** Explicit "not used" list prevents downstream code-emit (in implementation-skill TBD) from introducing parallel paradigms. Without this list, any LLM operating on the codebase can reasonably "add Tailwind for this one thing".
+2. **What is NOT used.** Explicit "not used" list prevents downstream code-emit from introducing parallel paradigms. Without this list, any LLM operating on the codebase can reasonably "add Tailwind for this one thing".
 3. **Theme/token access pattern.** Document the canonical import — `import theme from 'theme'`, `import { tokens } from '@/lib/tokens'`, etc. — so emit knows the convention.
 
-This is mapping-data (a fact about the codebase), not implementation-discipline. The future implementation-skill consumes this to enforce single-API styling at code-emit time. Mapping documents; implementation enforces.
+This is mapping-data (a fact about the codebase), not implementation-discipline. The sister `figma-to-code-implement` skill consumes this to enforce single-API styling at code-emit time. Mapping documents; implementation enforces. Skipping or leaving this section empty causes the regression class of *"dual-styling output"* — emit produces, e.g., `className` strings in an Emotion-only codebase — which is expensive to refactor after the fact.
 
 ### A2. Fill tokens.md (incrementally)
+
+**Halt-and-ask before A2:** if `tokens.md § Project styling stack` still contains the `[REQUIRED — fill before first map]` marker, halt and ask the user to fill it. A2 cannot proceed without that fact — downstream emit depends on knowing which styling API the project uses. Once filled, remove the marker and continue.
 
 Document only tokens that the first component touches. Subsequent components extend the tables.
 
@@ -434,6 +438,21 @@ Method:
 
 Document per variant in `<component-folder>/<name>.md` (Variant-mapping subsection) which state mechanism is active.
 
+#### A4e. Asset detection — register every Figma image-node
+
+For each image-node referenced in this Figma scope (icons, logos, illustrations, photos):
+
+1. **Look up** in `tokens.md § Asset-mapping registry` by Figma node-id.
+2. **Hit** (`REGISTERED`) → use the registered project asset path in the spec.
+3. **Miss** → halt and propose a row:
+   - **Suggested path:** match the project's detected asset convention (A1 — e.g., `src/assets/icons/`, `public/images/brand/`). If A1 detected no convention, fall back to `public/figma-assets/<readable-name>.<ext>`.
+   - **Status:** `PENDING` until the asset is materialised by the sister `figma-to-code-implement` skill at emit time.
+   - **Format:** `<figma-node-id> | <readable-name> | <project-path> | PENDING | <Figma source: MCP-localhost or fileKey URL>`
+4. User confirms or adjusts the path → registry row added with status `REGISTERED` (path agreed) or `PENDING` (waiting for asset).
+5. **No `[VERIFY]` placeholder for assets.** Assets are deterministic: either Figma exposes the node-id (registry row) or it doesn't (halt-and-ask, no improvisation).
+
+Mapping never writes the asset file. Implement materialises by reading the registry and downloading from the MCP payload to the registered path at emit time.
+
 ### A5. Finish Uses recursively (no separate permission ask)
 
 After every component mapping: scan the Uses column of the just-mapped component. For every not-yet-mapped **internal** Use: continue mapping immediately — part of completing the original component, not a separate pass.
@@ -450,7 +469,16 @@ When code is genuinely missing (component does not exist while Figma shows one):
 
 ### A6. Validation checklist (closing per mapping pass)
 
-At the end of every component mapping (before commit/sync) walk through these 8 checks explicitly. Drift test is a filter (what am I going to mark?); this checklist is positive (did I let nothing slip silently?).
+At the end of every component mapping (before commit/sync) walk through these checks explicitly. Drift test is a filter (what am I going to mark?); this checklist is positive (did I let nothing slip silently?).
+
+**Setup-integrity checks** — run before per-component checks, halt mapping pass if either fails:
+
+| # | Check | Where validated | On failure |
+|---|---|---|---|
+| 0a | **Cache gitignored** — `figma-context/` is listed in project `.gitignore` | Project `.gitignore` | Halt; restore the rule and re-run. Cache contains MCP context that must never be committed. |
+| 0b | **Styling stack filled** — `tokens.md § Project styling stack` is filled, not the `[REQUIRED — fill before first map]` placeholder | `tokens.md` | Halt; instruct user to fill the section. Downstream emit depends on knowing which styling API the project uses. |
+
+**Per-component checks** — run for the current mapping pass:
 
 | # | Check | Where validated |
 |---|---|---|
@@ -458,7 +486,7 @@ At the end of every component mapping (before commit/sync) walk through these 8 
 | 2 | **Typography** — font-family, size, weight, line-height match Figma style | Mapping table under "Text" |
 | 3 | **Colors** — exact match on Figma variable (Yellow/Y100, Blue/B30, etc.) or `[VERIFY]` | Mapping table under "Container/Color" |
 | 4 | **States** — variants and states (hover/focus/active/disabled) mapped where Figma shows them | Variant-mapping subsection |
-| 5 | **Assets** — SVG/icon/image sources reference existing project assets or MCP-localhost URL — no new imports, no placeholders | Mapping table "Icon-source / Asset" |
+| 5 | **Assets** — every Figma image-node is registered in `tokens.md § Asset-mapping registry` with a project asset path; SVG/icon sources reference existing project assets or MCP-localhost URL — no new imports, no placeholders | Asset registry + Mapping table "Icon-source / Asset" |
 | 6 | **Literal strings** — `aria-label`, `alt`, `placeholder`, `title`, hardcoded labels in code are mapped (code value + source) | Mapping table "Text" or separate row "Aria-label" |
 | 7 | **Token-verdict per row** — every code-value row in the mapping table has a verdict in column 3 (token-path / raw-token-available / raw-legitimate). No bare "hardcoded" entries. | Mapping tables |
 | 8 | **Drift test passed** — candidate issues classified: drift, verify-queue, or discarded | `drifts.md` + `verify-queue.md` |
