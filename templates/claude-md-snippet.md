@@ -50,6 +50,14 @@ For any work on components, tokens, or Figma mapping: use the figma-to-code-mapp
 4. Commits to git so it works team-wide
 5. On the next chat in this project the skill triggers automatically
 
+## Composition with the sister skill
+
+The sister skill [`figma-to-code-implement`](https://github.com/blisdigital/figma2code-implement) has its own `/figma-to-code-implement init-claude-md` that produces an **additive** block — designed to sit alongside this mapping block in the same `CLAUDE.md`, not replace it.
+
+Order in `CLAUDE.md`: mapping block first, implement block after. Implement's snippet checks for the mapping block and only shows the additive part — no duplicate `## Figma-to-code method` heading.
+
+If only one skill is installed, paste only that skill's block. Both skills are independently usable.
+
 ## What you do NOT do
 
 - Do not write to `CLAUDE.md` in the project repo yourself

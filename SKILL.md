@@ -1,6 +1,6 @@
 ---
 name: figma-to-code-mapping
-version: "3.2"
+version: "3.3"
 description: >
   Maps Figma designs onto an existing codebase via explicit documentation of tokens,
   components, and per-component specs. Use this skill when the user says
@@ -10,16 +10,16 @@ description: >
   with tokens.md and components.md.
   Goal: MCP code generation from Figma matches ≥90% with the existing codebase
   because tokens and components are explicitly mapped to code paths. **Scope is
-  mapping — not code implementation.** A separate "figma-to-code-implement" skill
-  is on the roadmap for emit-time enforcement. Works for any project with an existing
-  codebase plus Figma as design intent.
+  mapping — not code implementation.** Emit-time enforcement lives in the sister
+  skill [`figma-to-code-implement`](https://github.com/blisdigital/figma2code-implement).
+  Works for any project with an existing codebase plus Figma as design intent.
 ---
 
 # Figma-to-Code Mapping
 
 Mapping skill that ensures Figma MCP code generation matches the existing codebase visually and stylistically. Per-component specs live **co-located next to the component file** (`<component-folder>/<name>.md` next to `<name>.tsx`); project-wide indexes in `docs/`.
 
-> **Scope.** This skill is **mapping only**. It documents the relationship between Figma and existing code. Code generation, emit-discipline, and enforcement of mapping conventions belong in a separate **figma-to-code-implement** skill (on the roadmap, not in this skill). Mapping enables; implementation enforces.
+> **Scope.** This skill is **mapping only**. It documents the relationship between Figma and existing code. Code generation, emit-discipline, and enforcement of mapping conventions live in the sister skill [`figma-to-code-implement`](https://github.com/blisdigital/figma2code-implement). Mapping enables; implementation enforces.
 
 ## Vision
 
@@ -52,6 +52,11 @@ Eleven rules that always apply, regardless of step. On conflict between sections
    > **Do treat as a code-update trigger:**
    > - Explicit user sentence per token: "update `--X` to Y", "add X in code", "implement this in code".
    > - Reviewed PR with file-by-file approval.
+   >
+   > **Implement-intent sentences route to `figma-to-code-implement` (sister skill):**
+   > - "build this Figma frame", "implement this design", "generate code for [Figma URL]", "make this component".
+   > - These are emit requests, not mapping requests. Mapping skill: stop, surface the sister skill — *"This is an emit request. Run `/figma-to-code-implement <node>` instead."*
+   > - Implement halts itself on missing mapping and routes back to `/figma-to-code-mapping map X` — closed loop.
 3. **Apply the drift test to every candidate issue.** *"Would MCP code generation from this Figma node produce a visually wrong result?"* Yes → drift. No → another bucket (`verify-queue.md`, tech debt, or discard).
 4. **Map to existing components — never create new during mapping.** The skill never generates code components, never silently promotes a frame to a component, never infers visual similarity. Classify each Figma frame first:
 
@@ -81,7 +86,7 @@ When yes, when no, and where to go instead.
 | Map Figma frame to existing code (full page) | ✅ yes, recursively via A5 (organisms → molecules → atoms of that page) | — |
 | Update tokens/components/specs in existing mapping project | ✅ yes | — |
 | Detect drift between Figma and existing code | ✅ yes, as a byproduct of mapping | — |
-| **Implement** Figma frame as working code | ❌ no | Out of scope. This skill builds the mapping only; code generation is downstream work and belongs in a separate skill |
+| **Implement** Figma frame as working code (emit) | ❌ no | Use [`figma-to-code-implement`](https://github.com/blisdigital/figma2code-implement) — it consumes this skill's output (tokens, components, specs, cache, drifts) and emits code via the codebase's tokens and components |
 | Build a full page **from a text description** (no Figma input) | ❌ no | `figma-generate-design` or `frontend-design` (greenfield) |
 | **Write to** the Figma file (create nodes, define variables) | ❌ no | `figma-use` |
 | Create Code Connect mappings (`.figma.ts`) | ❌ no | `figma-code-connect` |
@@ -106,13 +111,25 @@ When yes, when no, and where to go instead.
 | **Drift** | Detect via drift test — never silently resolve | Surface drifts at emit; require designer/dev decision |
 | **Patterns** | Inventory Pages/Templates/Layout-primitives where they exist as components | Search-and-adopt existing patterns for non-componentized layouts |
 
-**Pattern: mapping enables, implementation enforces.** This skill prepares the ground-truth; an implementation-skill (TBD) will consume it.
+**Pattern: mapping enables, implementation enforces.** This skill prepares the ground-truth; the sister skill [`figma-to-code-implement`](https://github.com/blisdigital/figma2code-implement) consumes it.
 
 ## Slash commands
 
 - `/figma-to-code-mapping setup` — ask for confirmation, then create the `docs/` structure in the project repo. **Also adds `figma-context/` to project `.gitignore`** (or creates `.gitignore` if absent) — the cache should not be committed; node-data is regenerated on each MCP fetch.
 - `/figma-to-code-mapping map <component>` — start mapping that component (full A1-A6)
 - `/figma-to-code-mapping init-claude-md` — show a markdown block to paste into the project CLAUDE.md
+
+### Optional emit handoff after `map`
+
+After completing `/figma-to-code-mapping map X` (A1–A6 walk-through), offer a one-line opt-in handoff to the sister skill:
+
+```
+Mapping complete for X. Run `/figma-to-code-implement <node>` now to emit code from this mapping? [y/N]
+```
+
+- **User confirms** → exit, surface the slash command for implement. Implement reads what mapping just wrote.
+- **User declines** → silent return.
+- **Documentation-only mapping sessions** (no emit intent): skip the offer entirely — never push. This offer mirrors A5 recursive Uses in spirit (continue with related work without re-asking) but stays opt-in because crossing into a sibling skill is a different commitment than continuing the same mapping pass.
 
 ## The documents
 
@@ -157,6 +174,21 @@ Templates live in `templates/`. The `setup` command copies them into the project
   "spec_synced_with_files_hash": "sha256:abc123..."
 }
 ```
+
+**Schema — required fields unless marked optional:**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `node_id` | string (Figma ID format, e.g. `"16599:2645"`) | ✓ | Figma node identifier |
+| `name` | string | ✓ | Human-readable Figma node name |
+| `mapped_to_component` | string | ✓ | Code-component name as listed in `components.md` |
+| `spec_path` | string (relative path) | ✓ | Co-located spec file path relative to repo root |
+| `spec_synced_with_code_at` | ISO 8601 datetime | ✓ | Timestamp of last sync between spec and code |
+| `spec_synced_with_files_hash` | string (`sha256:<hex>`) | ✓ | Hash of code files at sync time; used for hash-check |
+| `master_verified_via` | enum: `"direct"` \| `"instance-id-format"` | optional | Master verification method (see § Source mechanism) |
+| `cache_verified_via_mcp` | boolean | optional | `false` if cache was populated without live MCP — note reason inline |
+
+The typed schema is a contract between mapping (writer) and the sister skill `figma-to-code-implement` (strict consumer). Schema drift breaks implement silently; this table makes the contract explicit.
 
 **Hash check on every pass.** Hash the current code files, compare with `spec_synced_with_files_hash`. On mismatch: spec is out of sync since a code change. Prevents working with outdated mappings.
 

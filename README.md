@@ -2,7 +2,7 @@
 
 Mapping skill for developers who want Figma MCP code generation to match an existing codebase ≥90%, without having to set up Figma Code Connect or Storybook.
 
-Scope is **mapping only** — the skill documents the relationship between Figma and existing code. It does not generate code or enforce emit-discipline. A separate `figma-to-code-implement` skill is on the roadmap for the emit half.
+Scope is **mapping only** — the skill documents the relationship between Figma and existing code. It does not generate code or enforce emit-discipline. The emit half is covered by the sister skill [`figma-to-code-implement`](https://github.com/blisdigital/figma2code-implement).
 
 ## Vision
 
@@ -125,7 +125,23 @@ figma2code/
 - **Not a design-system documentation tool.** The goal is mapping, not a complete design-system layer.
 - **Not a replacement for Figma Code Connect — a complement instead.** Code Connect binds Figma components to code snippets via `.figma.ts` files in the repo (requires a Figma Organization seat). This skill works freemium and with markdown, and adds something Code Connect does not: **drift detection as a loop**. Code Connect maps one-to-one; this skill detects when code and Figma drift apart and logs it as a decision point for designer or dev. The two approaches combine — Code Connect for mapping publication to Figma Dev Mode, this skill for the drift loop.
 - **Not behavior documentation.** Hover, focus, motion, keyboard handling live in code, not in specs.
-- **Not code generation or emit-discipline.** This skill maps; it documents the relationship between Figma and existing code. Enforcing rules at code-emit time (refusing hardcoded values, picking layout primitives, translating auto-layout, search-and-adopt patterns) belongs in a separate **figma-to-code-implement** skill — on the roadmap, not in this skill.
+- **Not code generation or emit-discipline.** This skill maps; it documents the relationship between Figma and existing code. Enforcing rules at code-emit time (refusing hardcoded values, picking layout primitives, translating auto-layout, search-and-adopt patterns) lives in the sister skill [`figma-to-code-implement`](https://github.com/blisdigital/figma2code-implement).
 - **Not a Figma-hygiene fixer.** If a Figma frame visually resembles a component but is not an instance of the master, the skill does not infer the similarity and link automatically. That is upstream design-ops work. Mapping classifies the frame as element-frame (token-only) or surfaces it for deliberate decision; designer fixes Figma hygiene.
 
 Full skill boundary including routing to sister skills: see [SKILL.md § Skill boundary](SKILL.md#skill-boundary).
+
+## Sister skill — figma-to-code-implement
+
+Mapping is the data layer; [`figma-to-code-implement`](https://github.com/blisdigital/figma2code-implement) is the policy layer. They are one pipeline:
+
+```
+User: build this Figma frame
+  → implement skill triggers
+    → B1 mapping presence check
+      → mapping exists → consume + emit
+      → no mapping → halt + route to /figma-to-code-mapping map X
+```
+
+Routing is bi-directional: implement halts and routes to mapping on gaps; mapping (Hard rule #2) routes implement-intent sentences to implement.
+
+**Use both together.** Map first, then implement. Mapping documents the relationship; implementation enforces it at code-emit time.
