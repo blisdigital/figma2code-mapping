@@ -265,6 +265,8 @@ Format: one line per drift in the "Drift notes" section of the spec.
 - <type> [Severity][Owner] — <file:line> <what differs>. Action: <what to do>.
 ```
 
+Every drift in `drifts.md` carries an `Action` column with one of five states: `OPEN`, `ACCEPTED`, `IGNORED`, `SCHEDULED`, `RESOLVED`. New drifts default to `OPEN`; the post-A6 drift-review step (§ A6) updates state when the user decides per drift. Without an Action column, `drifts.md` is an archive — with it, drift becomes a working backlog with an audit trail.
+
 ### Severity — heuristic
 
 Category level, not hardcoded thresholds. Concrete numeric thresholds (e.g. "5% lightness delta", "2px spacing delta") each project records itself in its own CLAUDE.md if desired.
@@ -504,6 +506,41 @@ At the end of every component mapping (before commit/sync) walk through these ch
 | 8 | **Drift test passed** — candidate issues classified: drift, verify-queue, or discarded | `drifts.md` + `verify-queue.md` |
 
 Tick off in the spec under "Drift notes": *"Spec last validated: [date] (A6 walked through)."*
+
+#### Drift review — proactive prompt after A6
+
+After the per-component checks pass, read `drifts.md`. If ≥1 entry has `Action: OPEN`, surface a prompt before the mapping pass closes:
+
+```
+X OPEN drifts found in drifts.md.
+Review now? [y/N]
+```
+
+- **User declines** → silent return. `drifts.md` unchanged.
+- **User confirms** → walk-through, sorted by severity (`Critical` → `Major` → `Minor`). Per drift, present the row and offer three options:
+
+  ```
+  Drift: <component> — <type> [Severity][Owner] <what differs>
+  Action:
+    1. revert-figma — designer aligns Figma to code (task: "<exact change>")
+    2. accept — code is the truth; update mapping-row to recognise code value
+    3. update-code — code aligns to Figma (manual or implement-skill follow-up)
+  ```
+
+  Per choice:
+
+  | Choice | Action-state | Side effects |
+  |---|---|---|
+  | revert-figma | `SCHEDULED` | Drift stays open until designer confirms Figma change; entry kept for next review |
+  | accept | `ACCEPTED` | Mapping-row updated in spec to acknowledge code value; drift closed |
+  | update-code | `SCHEDULED` | Drift stays open with a clear code-fix action; closes when fix lands and next mapping pass confirms |
+  | (skip / `IGNORED`) | `IGNORED` | User explicitly skips — drift stays for record without action |
+
+- Status-log update happens automatically: append a row to `drifts.md § Status log` with date, component, drift, new status.
+
+**Why proactive, not a separate command:** the moment the mapping context is fresh in memory is the right moment to decide. A separate `/review-drifts` command would require remembering to run it; proactive surfacing eliminates that friction. Walk-through is opt-in per pass (`[y/N]`).
+
+**Scope.** This is mapping-side drift-loop closing. Implement-side surfacing (drift-summary printed in chat after each emit) is a separate concern handled by the sister `figma-to-code-implement` skill.
 
 ## References
 
