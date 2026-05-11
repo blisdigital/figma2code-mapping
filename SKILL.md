@@ -158,6 +158,21 @@ Templates live in `templates/`. The `setup` command copies them into the project
 }
 ```
 
+**Schema — required fields unless marked optional:**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `node_id` | string (Figma ID format, e.g. `"16599:2645"`) | ✓ | Figma node identifier |
+| `name` | string | ✓ | Human-readable Figma node name |
+| `mapped_to_component` | string | ✓ | Code-component name as listed in `components.md` |
+| `spec_path` | string (relative path) | ✓ | Co-located spec file path relative to repo root |
+| `spec_synced_with_code_at` | ISO 8601 datetime | ✓ | Timestamp of last sync between spec and code |
+| `spec_synced_with_files_hash` | string (`sha256:<hex>`) | ✓ | Hash of code files at sync time; used for hash-check |
+| `master_verified_via` | enum: `"direct"` \| `"instance-id-format"` | optional | Master verification method (see § Source mechanism) |
+| `cache_verified_via_mcp` | boolean | optional | `false` if cache was populated without live MCP — note reason inline |
+
+A typed schema catches drift between cache files and the readers/writers (mapping passes, validation, future tooling) before it shows up as silent mapping errors.
+
 **Hash check on every pass.** Hash the current code files, compare with `spec_synced_with_files_hash`. On mismatch: spec is out of sync since a code change. Prevents working with outdated mappings.
 
 ### MCP tools and fallbacks
