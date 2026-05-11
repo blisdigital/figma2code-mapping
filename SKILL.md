@@ -58,13 +58,11 @@ Eleven rules that always apply, regardless of step. On conflict between sections
    | Frame type | Detection at mapping-time | Handling |
    |---|---|---|
    | **Component-instance** | `data-node-id="I<frame>;<master>"` — master-id present | Link to existing code component in `components.md`. Component-spec required. |
-   | **Frame ↔ code-component** (Figma-hygiene gap) | A4-classify fingerprint with ≥2 data-signals (naming + token-cluster + structural) + user-confirmation gate. See A4-classify. | Promote in `components.md` with `figma-master-missing` note. Add drift to `drifts.md`: "Figma frame should be component-instance". |
+   | **Frame ↔ code-component** (Figma-hygiene gap) | **Incidental notice** during normal A4 work — name + tokens + structure strongly align with an existing code component, but the frame has no master-id. User always gates. See A4-classify. | Promote in `components.md` with `figma-master-missing` note. Add drift to `drifts.md`: "Figma frame should be component-instance". |
    | **Component-missing drift** | Frame represents a reusable pattern but no code-component exists, and the team agrees one should | Mark as `component-missing` drift (Hard rule #9). Developer creates code-component. |
-   | **Element-frame** | No master-id, no fingerprint match meeting threshold, no reusable-pattern need | **Token-mapping only** — no component-spec. Tokens verified per Hard rule #11. |
+   | **Element-frame** | No master-id, no strong alignment with an existing component | **Token-mapping only** — no component-spec. Tokens verified per Hard rule #11. |
 
-   **Default for ambiguous frames: element-frame** (token-only). Promotion to component requires either a master-id (case 1) or a data-signal fingerprint match with user confirmation (case 2). Visual similarity alone is not a signal; only structured data (naming string-match, var-enumeration, structural archetype) counts.
-
-   **Implement-skill is the fallback, not the primary detector.** Mapping detects hygiene gaps at A4-classify time. If mapping misses one (e.g., low-signal frame that emit-time context reveals), the sister `figma-to-code-implement` skill may surface it via its own fingerprint pass with user confirmation, written back to `verify-queue.md`. Mapping then promotes in the next pass.
+   **Default for ambiguous frames: element-frame** (token-only). Promotion to component requires either a master-id (case 1) or a clear data-alignment noticed during mapping, always gated by user confirmation (case 2). Visual similarity alone is never a signal. **No systematic fingerprint scan** — promotion happens only when alignment is incidentally obvious from the data already in front of the agent (frame name + variable enumeration + structural archetype). Out-of-scope: actively hunting for hidden components. That is upstream Figma-hygiene work.
 5. **Specs contain mapping data only.** No "When to use", "Edge cases", "What this adds", hover/focus narratives. Resolve visual confusability through Variant mapping and master-id, not through prose.
 6. **No improvising on gaps.** Unknown? `[VERIFY]` in the Figma-name column or stop and ask. No assumptions.
 7. **Ask for confirmation before code or doc changes.** Exception: A5 recursive Uses mapping in the same session — no separate permission per child component.
@@ -343,47 +341,37 @@ Per element: fetch node data via cache (refresh via MCP), read the code, and pro
 
 #### A4-classify. Classify the frame type first
 
-Before any deeper mapping (A4a–A4d), classify the frame per Hard rule #4 in two steps.
+Before any deeper mapping (A4a–A4d), classify the frame per Hard rule #4.
 
-**Step 1 — fast path: master-id check.**
+**Fast path: master-id check.**
 
 Inspect `data-node-id` in MCP output:
 - `I<frame-id>;<master-id>` → **component-instance**. Proceed to A4a–A4d.
-- Plain `<frame-id>` (no `I` prefix) → not an instance. Continue to Step 2.
+- Plain `<frame-id>` (no `I` prefix) → **element-frame by default**. Token-mapping only; skip the rest of A4 except token-verdict per Hard rule #11.
 
-**Step 2 — fingerprint check (data-signals only, no visual inference).**
+**Incidental promotion to "Frame ↔ code-component".**
 
-For each plain frame, score these three signals against components in `components.md`:
+During normal A4 work the agent may notice — without a separate scan step — that a plain frame's data clearly aligns with an existing code component:
 
-| Signal | Check (data only) | Strong if |
-|---|---|---|
-| **Naming match** | Does frame name string-match (case-insensitive substring) a component name or alias? | Match on full name or recognized alias (`"Submit"` → Button if Button has `Submit` in label-alias list) |
-| **Token-cluster overlap** | Of the vars in `get_variable_defs(frame)`, what fraction overlaps with a component's documented vars? | ≥80% overlap with one specific component |
-| **Structural fit** | Does frame metadata-XML match a known component archetype? (e.g. single text-node in clickable container with radius + padding = button-archetype) | Exact archetype match |
+- Frame name matches a component name or known alias (`"Submit"` → Button), AND
+- Variables enumerated in `get_variable_defs(frame)` overlap heavily with that component's documented vars, AND
+- Structural archetype matches (e.g., single text-node in clickable container with radius + padding = button-archetype).
 
-Confidence thresholds:
+When alignment is incidentally obvious (not the result of hunting), surface it: *"Frame X data aligns with the Button component (name + tokens + structure). Promote as Frame ↔ code-component with figma-master-missing note? This also writes a drift to drifts.md."*
 
-- **≥2 strong signals** → propose to user: *"Frame X matches the Button component (naming + token-cluster). Promote as Frame ↔ code-component link with figma-master-missing note? This also writes a drift to drifts.md ('Figma frame should be component-instance of Button')."*
-- **1 strong signal** → tentative suggestion, user gates.
-- **0 signals** → **element-frame** (default). Token-mapping only. Skip rest of A4 except token-verdict per Hard rule #11.
+**User always gates.** Structure ≠ intent — even strong alignment may be a deliberate one-off (e.g., a marketing CTA that looks like Button but should not be templated). Hard rule #7 applies. Friction is low because strong alignments are rare in practice.
 
-**Vibe-guard.** Signals are structured-data checks only. No "looks like a Button", no pixel-similarity, no visual matching. If the only thing connecting frame to component is "they look similar" — that's not a signal. Element-frame.
-
-**User-confirmed match → handling:**
+**User confirmed →**
 
 - Add row to `components.md` with `figma-master-missing` note
 - Component-spec required (per Hard rule #4 case 2)
-- Add drift to `drifts.md`: "Figma frame X should be component-instance of Y (data-fingerprint match, user-confirmed)"
+- Add drift to `drifts.md`: "Figma frame X should be component-instance of Y (data-alignment, user-confirmed)"
 
-**User refused → element-frame** (token-only). Document in spec the agent considered but user opted-out, prevents re-asking on next pass.
+**User refused → element-frame** (token-only). Document in spec that the agent considered but user opted out, prevents re-asking on next pass.
 
-**Implement-skill is fallback only.** If a low-signal frame slipped through mapping but reveals itself at emit-time (e.g. implement-skill's own fingerprint catches it), implement writes to `verify-queue.md`. Mapping promotes on next pass. Mapping is the primary detector; implement is the safety net.
+**Vibe-guard.** Alignment is judged on enumerable data (name string, var list, structural archetype). No pixel-vibes, no "looks like". If the only connection is visual resemblance, it is an element-frame. When in doubt: element-frame is the safe default — messy Figma is upstream design-ops work, not mapping's job to outsmart.
 
-**Why this prevents both "AI-guessing" and "missed hygiene gaps":**
-
-- Without fingerprint at mapping-time: every frame-shaped-Button slips through as element-frame; implement emits dupes or waits.
-- With visual-similarity fingerprint: pixel-vibes, false positives on similar colors.
-- With structured-data fingerprint (this design): enumerable signals (naming, var-overlap, archetype), user-gated. No vibes; mapping detects most cases; implement covers the rest.
+**No systematic scan.** Mapping does not actively hunt for hidden components across the file. Promotion is opportunistic — when the data the agent already has in front of it strongly aligns, surface it; otherwise move on.
 
 #### A4a. MCP fetch order for large/complex nodes
 
