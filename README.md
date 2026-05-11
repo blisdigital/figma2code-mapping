@@ -6,6 +6,8 @@ Scope is **mapping only** — the skill documents the relationship between Figma
 
 ## Vision
 
+**A Figma file is full of information, but not specifications.** Without an explicit mapping layer, AI tools that consume Figma have to guess at everything the file does not say — token assignments, component identity, variant axes, drift between intent and rendered output. This skill closes that gap by documenting the relationship as data.
+
 **Goal: tight alignment between code and Figma.** Code is source of truth, Figma is intent — the skill keeps these two close together via five mechanisms:
 
 1. **Token mapping** (`docs/tokens.md`) — Figma variable → code path → value, with explicit status per row (`match` / `value-mismatch` / `figma-missing` / `code-missing`)

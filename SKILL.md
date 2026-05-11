@@ -1,6 +1,6 @@
 ---
 name: figma-to-code-mapping
-version: "3.3"
+version: "3.4"
 description: >
   Maps Figma designs onto an existing codebase via explicit documentation of tokens,
   components, and per-component specs. Use this skill when the user says
@@ -22,6 +22,8 @@ Mapping skill that ensures Figma MCP code generation matches the existing codeba
 > **Scope.** This skill is **mapping only**. It documents the relationship between Figma and existing code. Code generation, emit-discipline, and enforcement of mapping conventions live in the sister skill [`figma-to-code-implement`](https://github.com/blisdigital/figma2code-implement). Mapping enables; implementation enforces.
 
 ## Vision
+
+**A Figma file is full of information, but not specifications.** Without an explicit mapping layer, AI tools that consume Figma have to guess at everything the file does not say — token assignments, component identity, variant axes, drift between intent and rendered output. This skill closes that gap by documenting the relationship as data.
 
 **Goal: tight alignment between code and Figma.** Code is source of truth, Figma is intent — the goal is to keep these two close together. Drift is a measurable deviation, not a neutral observation.
 
@@ -191,6 +193,29 @@ Templates live in `templates/`. The `setup` command copies them into the project
 The typed schema is a contract between mapping (writer) and the sister skill `figma-to-code-implement` (strict consumer). Schema drift breaks implement silently; this table makes the contract explicit.
 
 **Hash check on every pass.** Hash the current code files, compare with `spec_synced_with_files_hash`. On mismatch: spec is out of sync since a code change. Prevents working with outdated mappings.
+
+### Cost-sensitive workflows — frozen specs
+
+By default `setup` adds `figma-context/` to `.gitignore` — the cache regenerates per MCP fetch, no commits needed. For teams sensitive to MCP token budget (large kits, frequent emit cycles, CI runners), the cache can be **committed instead of regenerated**: it becomes a versioned, MCP-free spec snapshot that agents read directly.
+
+**How to opt in:**
+
+1. Remove `figma-context/` from project `.gitignore`
+2. After a mapping pass completes, commit `figma-context/*.json` to git
+3. Agents (mapping or sister `figma-to-code-implement`) read from the committed cache; live MCP fires only on explicit `/figma-to-code-mapping map X` refresh
+4. Refresh on the cadence the team chooses — per change to a tracked Figma file, weekly, or on-demand
+
+**Tradeoff:**
+
+| | Live MCP (default) | Frozen specs (opt-in) |
+|---|---|---|
+| Freshness | Always current | As fresh as last commit |
+| MCP token cost | Per pass | One-time per refresh commit |
+| Setup | Zero config | Manual `.gitignore` edit + commit discipline |
+| Detecting Figma changes | Automatic at next pass | Manual / scheduled refresh |
+| Drift loop | Same | Same — hash-check still runs against code |
+
+The drift loop, token verdicts, atomic-design classification, and sister-skill routing all keep working in frozen mode — only the MCP-refresh step changes from automatic to manual. This pattern is the lightweight cousin of dedicated static-spec tools like [DirectedEdges/specs](https://github.com/DirectedEdges/specs), kept inside markdown + JSON instead of requiring a separate schema + CLI.
 
 ### MCP tools and fallbacks
 
