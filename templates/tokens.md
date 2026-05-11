@@ -54,31 +54,6 @@ both and mark which is canonical for new work. Remove the `[REQUIRED]` marker on
 
 ---
 
-## Asset-mapping registry
-
-Every Figma image-node referenced by a mapped component is registered here.
-Mapping writes the row; the sister
-[`figma-to-code-implement`](https://github.com/blisdigital/figma2code-implement)
-skill materialises the asset (downloads from MCP payload) at emit time.
-
-| Figma node-id | Readable name | Project asset path | Status | Figma source |
-|---|---|---|---|---|
-| | | | | |
-
-**Status enum:**
-- `REGISTERED` — path agreed; asset still to be materialised (next implement run).
-- `PENDING` — proposed during A4e but user has not confirmed the path yet.
-- `MATERIALISED` — asset present at the registered path on disk (implement-side write).
-
-**Suggested-path conventions:**
-- Match the project's existing asset convention if A1 detected one (e.g., `src/assets/icons/`, `public/images/brand/`).
-- Fallback: `public/figma-assets/<readable-name>.<ext>`.
-- Filename: prefer the Figma layer name (kebab-case); fall back to a deterministic hash if the layer name is unusable.
-
-No `[VERIFY]` rows for assets — assets are deterministic. Either the Figma node-id is in the registry, or A4e halts and asks.
-
----
-
 ## Auto-layout conventions (optional)
 
 > **Optional section.** Fill this in only if the project has a consistent convention

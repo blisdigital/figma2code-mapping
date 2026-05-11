@@ -71,7 +71,7 @@ Eleven rules that always apply, regardless of step. On conflict between sections
 5. **Specs contain mapping data only.** No "When to use", "Edge cases", "What this adds", hover/focus narratives. Resolve visual confusability through Variant mapping and master-id, not through prose.
 6. **No improvising on gaps.** Unknown? `[VERIFY]` in the Figma-name column or stop and ask. No assumptions.
 7. **Ask for confirmation before code or doc changes.** Exception: A5 recursive Uses mapping in the same session — no separate permission per child component.
-8. **Asset handling: registry + reuse → MCP-localhost → never new.** Every Figma image-node is recorded in `tokens.md § Asset-mapping registry` (Figma node-id → project asset path → status). Reuse project assets; otherwise use the localhost URL directly from the MCP payload. No new icon packages, no placeholders. Mapping documents the registry; the sister `figma-to-code-implement` skill materialises (downloads) the assets to the registered path at emit time. Mapping never writes asset files itself.
+8. **Asset handling: existing → MCP-localhost → never new.** Reuse project assets; otherwise use the localhost URL directly from the MCP payload. No new icon packages, no placeholders.
 9. **`component-missing` — do not auto-generate.** Mark it; the developer creates the code component before mapping continues.
 10. **A6 validation checklist mandatory at end of every pass.** 8 checks (layout / typography / colors / states / assets / literal strings / token-verdict / drift test). Do not skip.
 11. **Token-verdict mandatory in mapping tables.** Every code-value documented in a mapping table receives one of three verdicts in the third column: (a) the matching token-path (e.g., `theme.neutral.N100`), (b) `(raw, token available: <path>)` — code uses raw but a matching token exists; mapping captures this fact for future implementation-skill enforcement, or (c) `(raw, legitimate — no matching token)`. No bare "hardcoded" entries without a verdict. Mapping must give implementation-skill the data it needs to enforce single-source styling later.
@@ -231,7 +231,7 @@ Three rules apply to both URL formats:
 
 1. **Search for existing assets first.** If the codebase already has an asset that represents this Figma asset (e.g. `images/icons/ui/close.svg?react` for a close icon), use it. Map in the spec under the mapping table: `Icon-source | images/icons/ui/close.svg?react | local SVG import`.
 2. **Do not install new icon packages.** No `npm install lucide-react`, no `@mui/icons-material` import "just in case". All assets come from existing project assets or directly from the Figma MCP payload URL.
-3. **No placeholders.** Register every Figma image-node in `tokens.md § Asset-mapping registry` per A4e. Mapping never writes a TODO comment or leaves a `[VERIFY]` placeholder for assets. The registered path is the contract; the sister `figma-to-code-implement` skill materialises the file at emit time.
+3. **No placeholders.** When MCP returns an asset URL: use it directly, or download the asset once to the project's convention location and map there. Never leave a placeholder or TODO comment.
 
 When a Figma asset is neither in code nor coming from MCP: stop and ask the user. Do not improvise with a lookalike.
 
@@ -440,22 +440,7 @@ Method:
 
 Document per variant in `<component-folder>/<name>.md` (Variant-mapping subsection) which state mechanism is active.
 
-#### A4e. Asset detection — register every Figma image-node
-
-For each image-node referenced in this Figma scope (icons, logos, illustrations, photos):
-
-1. **Look up** in `tokens.md § Asset-mapping registry` by Figma node-id.
-2. **Hit** (`REGISTERED`) → use the registered project asset path in the spec.
-3. **Miss** → halt and propose a row:
-   - **Suggested path:** match the project's detected asset convention (A1 — e.g., `src/assets/icons/`, `public/images/brand/`). If A1 detected no convention, fall back to `public/figma-assets/<readable-name>.<ext>`.
-   - **Status:** `PENDING` until the asset is materialised by the sister `figma-to-code-implement` skill at emit time.
-   - **Format:** `<figma-node-id> | <readable-name> | <project-path> | PENDING | <Figma source: MCP-localhost or fileKey URL>`
-4. User confirms or adjusts the path → registry row added with status `REGISTERED` (path agreed) or `PENDING` (waiting for asset).
-5. **No `[VERIFY]` placeholder for assets.** Assets are deterministic: either Figma exposes the node-id (registry row) or it doesn't (halt-and-ask, no improvisation).
-
-Mapping never writes the asset file. Implement materialises by reading the registry and downloading from the MCP payload to the registered path at emit time.
-
-#### A4f. Responsive behavior — document only when Figma has it
+#### A4e. Responsive behavior — document only when Figma has it
 
 If the component is static across breakpoints: **skip this step entirely**. No empty section in the spec.
 
@@ -500,7 +485,7 @@ At the end of every component mapping (before commit/sync) walk through these ch
 | 2 | **Typography** — font-family, size, weight, line-height match Figma style | Mapping table under "Text" |
 | 3 | **Colors** — exact match on Figma variable (Yellow/Y100, Blue/B30, etc.) or `[VERIFY]` | Mapping table under "Container/Color" |
 | 4 | **States** — variants and states (hover/focus/active/disabled) mapped where Figma shows them | Variant-mapping subsection |
-| 5 | **Assets** — every Figma image-node is registered in `tokens.md § Asset-mapping registry` with a project asset path; SVG/icon sources reference existing project assets or MCP-localhost URL — no new imports, no placeholders | Asset registry + Mapping table "Icon-source / Asset" |
+| 5 | **Assets** — SVG/icon/image sources reference existing project assets or MCP-localhost URL — no new imports, no placeholders | Mapping table "Icon-source / Asset" |
 | 6 | **Literal strings** — `aria-label`, `alt`, `placeholder`, `title`, hardcoded labels in code are mapped (code value + source) | Mapping table "Text" or separate row "Aria-label" |
 | 7 | **Token-verdict per row** — every code-value row in the mapping table has a verdict in column 3 (token-path / raw-token-available / raw-legitimate). No bare "hardcoded" entries. | Mapping tables |
 | 8 | **Drift test passed** — candidate issues classified: drift, verify-queue, or discarded | `drifts.md` + `verify-queue.md` |
