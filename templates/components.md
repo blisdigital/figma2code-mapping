@@ -7,13 +7,6 @@ atomic design.
 > lives in `src/components/`. This index shows *what* exists, *what-uses-what*, and
 > which Figma node belongs to it.
 
-> **Element-frames are not listed here.** This index covers only Figma component-instances
-> linked to code-components, plus frames deliberately linked to code-components with
-> `figma-master-missing` notes. Element-frames (Figma frames with no master and no
-> code-component equivalent — illustration wrappers, hero text, ad-hoc layout containers,
-> typically ~60% of a page) are token-mapped only in `tokens.md`. See SKILL.md Hard rule #4
-> for the four-case classification.
-
 ## Atomic design — five levels (organic)
 
 Brad Frost atomic-design has five levels. This index grows organically — only
