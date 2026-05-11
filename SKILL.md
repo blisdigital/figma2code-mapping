@@ -53,18 +53,18 @@ Eleven rules that always apply, regardless of step. On conflict between sections
    > - Explicit user sentence per token: "update `--X` to Y", "add X in code", "implement this in code".
    > - Reviewed PR with file-by-file approval.
 3. **Apply the drift test to every candidate issue.** *"Would MCP code generation from this Figma node produce a visually wrong result?"* Yes → drift. No → another bucket (`verify-queue.md`, tech debt, or discard).
-4. **Map to existing components — never create new during mapping.** The skill never generates code components, never promotes a frame to a component on its own, never infers similarity silently. Classify each Figma frame first:
+4. **Map to existing components — never create new during mapping.** The skill never generates code components, never silently promotes a frame to a component, never infers visual similarity. Classify each Figma frame first:
 
    | Frame type | Detection at mapping-time | Handling |
    |---|---|---|
    | **Component-instance** | `data-node-id="I<frame>;<master>"` — master-id present | Link to existing code component in `components.md`. Component-spec required. |
-   | **Element-frame** | No master-id, no confident code-component fingerprint match | **Token-mapping only** — no component-spec. Tokens verified per Hard rule #11. |
+   | **Frame ↔ code-component** (Figma-hygiene gap) | A4-classify fingerprint with ≥2 data-signals (naming + token-cluster + structural) + user-confirmation gate. See A4-classify. | Promote in `components.md` with `figma-master-missing` note. Add drift to `drifts.md`: "Figma frame should be component-instance". |
    | **Component-missing drift** | Frame represents a reusable pattern but no code-component exists, and the team agrees one should | Mark as `component-missing` drift (Hard rule #9). Developer creates code-component. |
-   | **Frame ↔ code-component** (Figma-hygiene gap) | Detected at **implementation-time** via fingerprint heuristic in the sister `figma-to-code-implement` skill (token-cluster overlap, naming hint, structural pattern). User-confirmed match writes back to `verify-queue.md` as drift "Figma frame should be component-instance". | After user confirmation, mapping promotes the link in `components.md` with `figma-master-missing` note. Mapping itself does not run fingerprint. |
+   | **Element-frame** | No master-id, no fingerprint match meeting threshold, no reusable-pattern need | **Token-mapping only** — no component-spec. Tokens verified per Hard rule #11. |
 
-   **Default for ambiguous frames: element-frame** (token-only). Promotion to component requires either a master-id (case 1) or an implement-skill fingerprint match with user confirmation (case 4). Visual similarity alone is upstream Figma-hygiene work; mapping does not auto-promote.
+   **Default for ambiguous frames: element-frame** (token-only). Promotion to component requires either a master-id (case 1) or a data-signal fingerprint match with user confirmation (case 2). Visual similarity alone is not a signal; only structured data (naming string-match, var-enumeration, structural archetype) counts.
 
-   **Bidirectional feedback.** `verify-queue.md` accepts entries from the sister `figma-to-code-implement` skill (when its fingerprint heuristic surfaces a frame-should-be-instance hygiene gap with user confirmation). Mapping is canonical source; implement can feed back discoveries. See `verify-queue.md` for entry shapes.
+   **Implement-skill is the fallback, not the primary detector.** Mapping detects hygiene gaps at A4-classify time. If mapping misses one (e.g., low-signal frame that emit-time context reveals), the sister `figma-to-code-implement` skill may surface it via its own fingerprint pass with user confirmation, written back to `verify-queue.md`. Mapping then promotes in the next pass.
 5. **Specs contain mapping data only.** No "When to use", "Edge cases", "What this adds", hover/focus narratives. Resolve visual confusability through Variant mapping and master-id, not through prose.
 6. **No improvising on gaps.** Unknown? `[VERIFY]` in the Figma-name column or stop and ask. No assumptions.
 7. **Ask for confirmation before code or doc changes.** Exception: A5 recursive Uses mapping in the same session — no separate permission per child component.
@@ -343,21 +343,47 @@ Per element: fetch node data via cache (refresh via MCP), read the code, and pro
 
 #### A4-classify. Classify the frame type first
 
-Before any deeper mapping (A4a–A4d), classify the frame per Hard rule #4. Mapping does only **two** of the four cases at mapping-time; the fourth case is detected by the sister implement-skill and fed back via `verify-queue.md`.
+Before any deeper mapping (A4a–A4d), classify the frame per Hard rule #4 in two steps.
 
-**Mapping-time classification (single check):**
+**Step 1 — fast path: master-id check.**
 
-1. **Check `data-node-id` format** in MCP output:
-   - `I<frame-id>;<master-id>` → **component-instance** → full component-mapping (link in `components.md`). Proceed to A4a–A4d.
-   - Plain `<frame-id>` (no `I` prefix) → not an instance. Classify further:
-     - Does the team agree this pattern should be a reusable code-component but is missing? → **component-missing** drift (Hard rule #9), halt.
-     - Otherwise → **element-frame** (default). Token-mapping only. Skip the rest of A4 except token-verdict per Hard rule #11.
+Inspect `data-node-id` in MCP output:
+- `I<frame-id>;<master-id>` → **component-instance**. Proceed to A4a–A4d.
+- Plain `<frame-id>` (no `I` prefix) → not an instance. Continue to Step 2.
 
-**Implementation-time feedback loop (read-only at mapping-time):**
+**Step 2 — fingerprint check (data-signals only, no visual inference).**
 
-The fourth case in Hard rule #4 — *Frame ↔ code-component* (Figma frame that visually corresponds to an existing code-component but lacks a master-id) — is **not detected by mapping**. It is detected by the sister `figma-to-code-implement` skill via a fingerprint heuristic (token-cluster overlap, naming hint, structural pattern) with user-confirmation gate. When the user confirms, the implement-skill writes a `verify-queue.md` entry: `Figma frame X should be component-instance of Y (user-confirmed via fingerprint).` On the next mapping pass, the mapping agent reads `verify-queue.md` and, if confirmed, promotes the link in `components.md` with `figma-master-missing` note.
+For each plain frame, score these three signals against components in `components.md`:
 
-**Rationale.** Element-frame is the safe default at mapping-time. Aggressive fingerprint-detection at mapping-time would force "is this a hidden Button?" questions on every illustration wrapper, hero text, or layout container — typically the majority of a page's frames. Mapping documents what is, implement detects hygiene gaps it can act on, and the verify-queue carries the discoveries back.
+| Signal | Check (data only) | Strong if |
+|---|---|---|
+| **Naming match** | Does frame name string-match (case-insensitive substring) a component name or alias? | Match on full name or recognized alias (`"Submit"` → Button if Button has `Submit` in label-alias list) |
+| **Token-cluster overlap** | Of the vars in `get_variable_defs(frame)`, what fraction overlaps with a component's documented vars? | ≥80% overlap with one specific component |
+| **Structural fit** | Does frame metadata-XML match a known component archetype? (e.g. single text-node in clickable container with radius + padding = button-archetype) | Exact archetype match |
+
+Confidence thresholds:
+
+- **≥2 strong signals** → propose to user: *"Frame X matches the Button component (naming + token-cluster). Promote as Frame ↔ code-component link with figma-master-missing note? This also writes a drift to drifts.md ('Figma frame should be component-instance of Button')."*
+- **1 strong signal** → tentative suggestion, user gates.
+- **0 signals** → **element-frame** (default). Token-mapping only. Skip rest of A4 except token-verdict per Hard rule #11.
+
+**Vibe-guard.** Signals are structured-data checks only. No "looks like a Button", no pixel-similarity, no visual matching. If the only thing connecting frame to component is "they look similar" — that's not a signal. Element-frame.
+
+**User-confirmed match → handling:**
+
+- Add row to `components.md` with `figma-master-missing` note
+- Component-spec required (per Hard rule #4 case 2)
+- Add drift to `drifts.md`: "Figma frame X should be component-instance of Y (data-fingerprint match, user-confirmed)"
+
+**User refused → element-frame** (token-only). Document in spec the agent considered but user opted-out, prevents re-asking on next pass.
+
+**Implement-skill is fallback only.** If a low-signal frame slipped through mapping but reveals itself at emit-time (e.g. implement-skill's own fingerprint catches it), implement writes to `verify-queue.md`. Mapping promotes on next pass. Mapping is the primary detector; implement is the safety net.
+
+**Why this prevents both "AI-guessing" and "missed hygiene gaps":**
+
+- Without fingerprint at mapping-time: every frame-shaped-Button slips through as element-frame; implement emits dupes or waits.
+- With visual-similarity fingerprint: pixel-vibes, false positives on similar colors.
+- With structured-data fingerprint (this design): enumerable signals (naming, var-overlap, archetype), user-gated. No vibes; mapping detects most cases; implement covers the rest.
 
 #### A4a. MCP fetch order for large/complex nodes
 
