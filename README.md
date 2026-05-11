@@ -47,10 +47,10 @@ The recommended approach is a **symlink** from `~/.claude/skills/figma-to-code-m
 
 ```bash
 # Clone this repo
-git clone https://github.com/blisdigital/figma2code.git ~/Github/figma2code
+git clone https://github.com/blisdigital/figma2code-mapping.git ~/Github/figma2code-mapping
 
 # Symlink into ~/.claude/skills/
-ln -s ~/Github/figma2code ~/.claude/skills/figma-to-code-mapping
+ln -s ~/Github/figma2code-mapping ~/.claude/skills/figma-to-code-mapping
 
 # Verify
 claude
@@ -60,7 +60,7 @@ claude
 
 To update:
 ```bash
-cd ~/Github/figma2code && git pull
+cd ~/Github/figma2code-mapping && git pull
 ```
 
 ## Usage
