@@ -1,6 +1,6 @@
 ---
 name: figma-to-code-mapping
-version: "3.1"
+version: "3.2"
 description: >
   Maps Figma designs onto an existing codebase via explicit documentation of tokens,
   components, and per-component specs. Use this skill when the user says
@@ -35,6 +35,8 @@ The skill delivers this through five mechanisms (see [README § Vision](README.m
 
 **Concrete effect:** MCP output uses the right code paths, imports, and patterns directly — no manual translation per request. Developers and designers use these docs to keep the match between design and code high. Drift is briefly marked where visible; mapping is the primary work.
 
+**What the skill does NOT solve.** Messy Figma is upstream design-ops work, not mapping's responsibility. The skill documents what Figma + code are *now*; it does not infer visual similarity to compensate for missing Figma masters, does not promote element-frames to components without explicit decision, and does not create code components. If a Figma frame "looks like a Button" but is not an instance of the Button master: that is a Figma-hygiene gap. Mapping surfaces it (via `figma-master-missing` note when a deliberate link is made, or by leaving it as an element-frame); designer decides.
+
 ## Hard rules
 
 Eleven rules that always apply, regardless of step. On conflict between sections: these win.
@@ -51,7 +53,16 @@ Eleven rules that always apply, regardless of step. On conflict between sections
    > - Explicit user sentence per token: "update `--X` to Y", "add X in code", "implement this in code".
    > - Reviewed PR with file-by-file approval.
 3. **Apply the drift test to every candidate issue.** *"Would MCP code generation from this Figma node produce a visually wrong result?"* Yes → drift. No → another bucket (`verify-queue.md`, tech debt, or discard).
-4. **Map to existing components — never create new during mapping.** Every Figma element MUST be linked to an existing code component (in `components.md`). If no matching component exists → `component-missing` drift (Hard rule #9), do not auto-generate. Mapping documents the link; implementation will later consume it.
+4. **Map to existing components — never create new during mapping.** The skill never generates code components, never silently promotes a frame to a component, never infers visual similarity. Classify each Figma frame first:
+
+   | Frame type | Detection at mapping-time | Handling |
+   |---|---|---|
+   | **Component-instance** | `data-node-id="I<frame>;<master>"` — master-id present | Link to existing code component in `components.md`. Component-spec required. |
+   | **Frame ↔ code-component** (Figma-hygiene gap) | **Incidental notice** during normal A4 work — name + tokens + structure strongly align with an existing code component, but the frame has no master-id. User always gates. See A4-classify. | Promote in `components.md` with `figma-master-missing` note. Add drift to `drifts.md`: "Figma frame should be component-instance". |
+   | **Component-missing drift** | Frame represents a reusable pattern but no code-component exists, and the team agrees one should | Mark as `component-missing` drift (Hard rule #9). Developer creates code-component. |
+   | **Element-frame** | No master-id, no strong alignment with an existing component | **Token-mapping only** — no component-spec. Tokens verified per Hard rule #11. |
+
+   **Default for ambiguous frames: element-frame** (token-only). Promotion to component requires either a master-id (case 1) or a clear data-alignment noticed during mapping, always gated by user confirmation (case 2). Visual similarity alone is never a signal. **No systematic fingerprint scan** — promotion happens only when alignment is incidentally obvious from the data already in front of the agent (frame name + variable enumeration + structural archetype). Out-of-scope: actively hunting for hidden components. That is upstream Figma-hygiene work.
 5. **Specs contain mapping data only.** No "When to use", "Edge cases", "What this adds", hover/focus narratives. Resolve visual confusability through Variant mapping and master-id, not through prose.
 6. **No improvising on gaps.** Unknown? `[VERIFY]` in the Figma-name column or stop and ask. No assumptions.
 7. **Ask for confirmation before code or doc changes.** Exception: A5 recursive Uses mapping in the same session — no separate permission per child component.
@@ -327,6 +338,34 @@ In code these are typically 5+ separate axes (`variant` × `size` × `className`
 Per element: fetch node data via cache (refresh via MCP), read the code, and propose a mapping (Figma property → code token or code path). User confirms. On doubt: `[VERIFY]` in the Figma-name column, do not improvise.
 
 > **Warning — variable scope.** `get_variable_defs(nodeId)` returns **only variables this specific node consumes**. Vars that exist file-level but are not used by this node do not come back. For `figma-missing` conclusions in `tokens.md`: query at least 3 component pages from different categories (buttons / cards / forms / feedback) before marking the gap definitively. A single-node pass produces false-positive `figma-missing` flags that later passes have to retract.
+
+#### A4-classify. Classify the frame type first
+
+Before any deeper mapping (A4a–A4d), classify the frame per Hard rule #4.
+
+**Fast path: master-id check.**
+
+Inspect `data-node-id` in MCP output:
+- `I<frame-id>;<master-id>` → **component-instance**. Proceed to A4a–A4d.
+- Plain `<frame-id>` (no `I` prefix) → **element-frame by default**. Token-mapping only; skip the rest of A4 except token-verdict per Hard rule #11.
+
+**Incidental promotion to "Frame ↔ code-component".**
+
+During normal A4 work the agent may notice — without a separate scan step — that a plain frame's data clearly aligns with an existing code component:
+
+- Frame name matches a component name or known alias (`"Submit"` → Button), AND
+- Variables enumerated in `get_variable_defs(frame)` overlap heavily with that component's documented vars, AND
+- Structural archetype matches (e.g., single text-node in clickable container with radius + padding = button-archetype).
+
+When alignment is incidentally obvious (not the result of hunting), surface it and let the user gate per Hard rule #7: *"Frame X data aligns with the Button component (name + tokens + structure). Promote as Frame ↔ code-component with figma-master-missing note? This also writes a drift to drifts.md."*
+
+**User confirmed →**
+
+- Add row to `components.md` with `figma-master-missing` note
+- Component-spec required (per Hard rule #4 case 2)
+- Add drift to `drifts.md`: "Figma frame X should be component-instance of Y (data-alignment, user-confirmed)"
+
+**User refused → element-frame** (token-only). Note in spec that the agent considered but user opted out, prevents re-asking. Record in `verify-queue.md` per Entry sources.
 
 #### A4a. MCP fetch order for large/complex nodes
 
