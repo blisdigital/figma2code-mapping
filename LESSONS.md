@@ -80,3 +80,8 @@ Proposal: Rename to "figma-to-code-mapping" — explicit half-of-pipeline name. 
 Situation: SKILL.md grew to 504 lines after 13+ refinements; Lessons learned section alone was ~65 lines and re-loaded on every application pass although only the most recent entries are tactically relevant.
 What worked: Moving lessons-learned to a separate `LESSONS.md` keeps the historical record while reducing per-application context load. Format spec lives in CLAUDE.md (edit-meta info).
 Proposal: New lessons append to `LESSONS.md`, not to SKILL.md. CLAUDE.md `§ Writing lessons-learned` instructs where.
+
+[LESSON — 2026-05-11] [correction]
+Situation: Hard rule #4 forced "every Figma element MUST be linked to an existing code component". Atomic-design bias from v2.10 (5 levels) — implicit assumption that every frame is an atom/molecule/organism/template/page. Reality: ~60% of page frames are element-frames (no Figma master, no code-component equivalent — illustration wrappers, hero text, layout containers). Old rule produced false `component-missing` drifts and spec-file bloat for these.
+What did not work: Skill conflated "frame without master that should be a component" with "frame without master that legitimately is not a component". Element-frames don't need component-spec — token-mapping suffices.
+Proposal: Hard rule #4 classification table with four frame types (component-instance / frame↔code-component / element-frame / component-missing drift) + A4-classify step. Vision-statement: messy Figma is upstream design-ops, not mapping's job to outsmart. Components.md template note excluding element-frames.
