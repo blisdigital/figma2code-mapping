@@ -465,7 +465,7 @@ If Figma shows responsive variants (e.g., `Size=mobile / desktop`) or constraint
 2. For each breakpoint, document *what visually changes* (gap, direction, full-width vs side-by-side, label hide, etc.) and the *Figma evidence* (which variant or constraint).
 3. Fill `## Responsive behavior` table in `<component-folder>/<name>.md`.
 
-The sister `figma-to-code-implement` skill consumes this section to pick units (rem vs px) and layout primitives (`flex-1` vs fixed width). Without it, the agent guesses or asks per emit — exactly the friction Pelle's run revealed when MCP comments leaked responsive intent into emitted code.
+The sister `figma-to-code-implement` skill consumes this section to pick units (rem vs px) and layout primitives (`flex-1` vs fixed width). Without it, the agent guesses or asks per emit — the friction observed when MCP comments leaked responsive intent into emitted code during developer test runs.
 
 ### A5. Finish Uses recursively (no separate permission ask)
 
