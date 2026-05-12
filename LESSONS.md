@@ -105,3 +105,18 @@ Proposal: Option B — replace systematic scan with incidental notice. Agent sur
 Situation: After v3.2 closed PRs #6 (implement-handoff doc) and #7 (cache-schema mini-PR) under "wait for implement ship" discipline. Sister skill `figma-to-code-implement` v0.1 then shipped, unblocking the deferred items.
 What worked: Holding the coordinated edits for the actual ship-moment kept the skill repo clean and the lessons honest — no aspirational doc, no premature schema, no broken cross-links to a non-existent skill. The implement skill itself stayed independently shippable; the mapping-side coordination landed as one cohesive PR (v3.3) when both sides actually existed.
 Proposal: For future sister-skill coordination — never land in mapping while sister is design-only. Bundle coordination edits and apply once the dependency is real. The "wait" is not delay; it is preventing rot.
+
+[LESSON — 2026-05-11] [correction]
+Situation: A developer test run revealed two concrete hardening gaps: (a) `figma-context/` ended up public because setup's gitignore step was documented but not enforced; (b) styling-stack section was optional in wording, causing dual-styling regression (className in Emotion codebase).
+What did not work: Documentation-only enforcement is silent fallback by design — agents skip on partial permissions. Styling-stack-as-optional left downstream emit guessing which API the project uses.
+Proposal: v3.5 — two hardening fixes. Setup fails hard on .gitignore write-block; styling-stack `[REQUIRED]` marker + halt before A2. A6 gets two pre-component-check setup-integrity checks (0a, 0b). Asset-mapping registry was considered but deferred — no current pain in the project, and the registry pattern was scope-heavy for an unproven need.
+
+[LESSON — 2026-05-11] [correction]
+Situation: Developer-test feedback flagged that bare MCP-output dumps responsive intent into code-comments ("hoe veel bij hoeveel achtergrond moest zijn"). Mapping had geen plek voor breakpoint × what-changes; agents lieten het in comments belanden of vroegen het per emit opnieuw.
+What did not work: Component-spec template had geen responsive-section. Token-tabel dekt waarden, niet *intent-per-breakpoint*. Responsive variants in Figma (Size=mobile/desktop, Fill constraints) waren mapping-data zonder huis.
+Proposal: v3.5 — new `## Responsive behavior` section in component-spec template, optional (skip-entirely-if-static). New A4e step: conditional documentatie alleen als Figma constraints of responsive variants heeft. Implement-skill consumeert sectie voor unit-keuze (rem vs px) en layout primitives.
+
+[LESSON — 2026-05-11] [correction]
+Situation: drifts.md werkte als archief — niemand opende het zonder reden, beslis-stap gebeurde nergens automatisch. Mapping detecteerde drift, schreef droog naar markdown, daarna stopte het. Vision-mechanism #3 ("drift as decision point, not silently resolved") was incompleet in implementatie.
+What did not work: zonder proactieve surfacing en zonder status-tracking is drifts.md "informatie die niemand leest". Detection en logging werkten al; surfacing-aan-beslisser en decision-routing ontbraken.
+Proposal: v3.5 Tranche 3 — proactieve post-A6 drift-review prompt (geen aparte slash-command). Als drifts.md ≥1 OPEN entry heeft na A6 checks → prompt user `[y/N]` voor walk-through, sorted by severity, 3 opties per drift (revert-figma / accept / update-code). Drifts.md krijgt Action-kolom met enum (OPEN / ACCEPTED / IGNORED / SCHEDULED / RESOLVED). Status-log append automatisch. Mapping-side drift-loop gesloten; implement-side blijft eigen verantwoordelijkheid van sister skill.

@@ -1,6 +1,6 @@
 ---
 name: figma-to-code-mapping
-version: "3.3"
+version: "3.5"
 description: >
   Maps Figma designs onto an existing codebase via explicit documentation of tokens,
   components, and per-component specs. Use this skill when the user says
@@ -115,7 +115,7 @@ When yes, when no, and where to go instead.
 
 ## Slash commands
 
-- `/figma-to-code-mapping setup` — ask for confirmation, then create the `docs/` structure in the project repo. **Also adds `figma-context/` to project `.gitignore`** (or creates `.gitignore` if absent) — the cache should not be committed; node-data is regenerated on each MCP fetch.
+- `/figma-to-code-mapping setup` — ask for confirmation, then create the `docs/` structure in the project repo. **Adds `figma-context/` to project `.gitignore`** (or creates `.gitignore` if absent) — the cache should not be committed; node-data is regenerated on each MCP fetch. **Setup fails hard if `.gitignore` cannot be written** (missing write-permission, read-only mount, or the rule cannot be appended). The cache contains MCP context and tokens that must never reach a public commit; setup will not silently fall through this guard.
 - `/figma-to-code-mapping map <component>` — start mapping that component (full A1-A6)
 - `/figma-to-code-mapping init-claude-md` — show a markdown block to paste into the project CLAUDE.md
 
@@ -265,6 +265,8 @@ Format: one line per drift in the "Drift notes" section of the spec.
 - <type> [Severity][Owner] — <file:line> <what differs>. Action: <what to do>.
 ```
 
+Every drift in `drifts.md` carries an `Action` column with one of five states: `OPEN`, `ACCEPTED`, `IGNORED`, `SCHEDULED`, `RESOLVED`. New drifts default to `OPEN`; the post-A6 drift-review step (§ A6) updates state when the user decides per drift. Without an Action column, `drifts.md` is an archive — with it, drift becomes a working backlog with an audit trail.
+
 ### Severity — heuristic
 
 Category level, not hardcoded thresholds. Concrete numeric thresholds (e.g. "5% lightness delta", "2px spacing delta") each project records itself in its own CLAUDE.md if desired.
@@ -300,9 +302,11 @@ Scan the existing codebase. Identify:
 
 Give the user a short summary before continuing.
 
-#### Styling stack — document as project fact
+#### Styling stack — document as project fact (mandatory)
 
-A1 must produce an explicit styling-stack section in `tokens.md` (or a new `styling-stack.md` if cleaner per project). Format example:
+A1 must produce an explicit `## Project styling stack` section in `tokens.md`. **This section is mandatory** — setup creates it pre-filled with a `[REQUIRED — fill before first map]` placeholder. The first `map X` halts before A2 if the placeholder is still in place; A6 check 0b verifies the section is filled on every subsequent pass.
+
+Format example:
 
 ```markdown
 ## Project styling stack
@@ -315,12 +319,14 @@ A1 must produce an explicit styling-stack section in `tokens.md` (or a new `styl
 Three rules:
 
 1. **One API only.** Document which styling API the project uses exclusively. If the project mixes APIs (e.g., legacy CSS modules + new Emotion), document both and note which is canonical for new work.
-2. **What is NOT used.** Explicit "not used" list prevents downstream code-emit (in implementation-skill TBD) from introducing parallel paradigms. Without this list, any LLM operating on the codebase can reasonably "add Tailwind for this one thing".
+2. **What is NOT used.** Explicit "not used" list prevents downstream code-emit from introducing parallel paradigms. Without this list, any LLM operating on the codebase can reasonably "add Tailwind for this one thing".
 3. **Theme/token access pattern.** Document the canonical import — `import theme from 'theme'`, `import { tokens } from '@/lib/tokens'`, etc. — so emit knows the convention.
 
-This is mapping-data (a fact about the codebase), not implementation-discipline. The future implementation-skill consumes this to enforce single-API styling at code-emit time. Mapping documents; implementation enforces.
+This is mapping-data (a fact about the codebase), not implementation-discipline. The sister `figma-to-code-implement` skill consumes this to enforce single-API styling at code-emit time. Mapping documents; implementation enforces. Skipping or leaving this section empty causes the regression class of *"dual-styling output"* — emit produces, e.g., `className` strings in an Emotion-only codebase — which is expensive to refactor after the fact.
 
 ### A2. Fill tokens.md (incrementally)
+
+**Halt-and-ask before A2:** if `tokens.md § Project styling stack` still contains the `[REQUIRED — fill before first map]` marker, halt and ask the user to fill it. A2 cannot proceed without that fact — downstream emit depends on knowing which styling API the project uses. Once filled, remove the marker and continue.
 
 Document only tokens that the first component touches. Subsequent components extend the tables.
 
@@ -434,6 +440,18 @@ Method:
 
 Document per variant in `<component-folder>/<name>.md` (Variant-mapping subsection) which state mechanism is active.
 
+#### A4e. Responsive behavior — document only when Figma has it
+
+If the component is static across breakpoints: **skip this step entirely**. No empty section in the spec.
+
+If Figma shows responsive variants (e.g., `Size=mobile / desktop`) or constraints that change layout/sizing per breakpoint:
+
+1. Identify the breakpoints from Figma (variants or constraint settings).
+2. For each breakpoint, document *what visually changes* (gap, direction, full-width vs side-by-side, label hide, etc.) and the *Figma evidence* (which variant or constraint).
+3. Fill `## Responsive behavior` table in `<component-folder>/<name>.md`.
+
+The sister `figma-to-code-implement` skill consumes this section to pick units (rem vs px) and layout primitives (`flex-1` vs fixed width). Without it, the agent guesses or asks per emit — the friction observed when MCP comments leaked responsive intent into emitted code during developer test runs.
+
 ### A5. Finish Uses recursively (no separate permission ask)
 
 After every component mapping: scan the Uses column of the just-mapped component. For every not-yet-mapped **internal** Use: continue mapping immediately — part of completing the original component, not a separate pass.
@@ -450,7 +468,16 @@ When code is genuinely missing (component does not exist while Figma shows one):
 
 ### A6. Validation checklist (closing per mapping pass)
 
-At the end of every component mapping (before commit/sync) walk through these 8 checks explicitly. Drift test is a filter (what am I going to mark?); this checklist is positive (did I let nothing slip silently?).
+At the end of every component mapping (before commit/sync) walk through these checks explicitly. Drift test is a filter (what am I going to mark?); this checklist is positive (did I let nothing slip silently?).
+
+**Setup-integrity checks** — run before per-component checks, halt mapping pass if either fails:
+
+| # | Check | Where validated | On failure |
+|---|---|---|---|
+| 0a | **Cache gitignored** — `figma-context/` is listed in project `.gitignore` | Project `.gitignore` | Halt; restore the rule and re-run. Cache contains MCP context that must never be committed. |
+| 0b | **Styling stack filled** — `tokens.md § Project styling stack` is filled, not the `[REQUIRED — fill before first map]` placeholder | `tokens.md` | Halt; instruct user to fill the section. Downstream emit depends on knowing which styling API the project uses. |
+
+**Per-component checks** — run for the current mapping pass:
 
 | # | Check | Where validated |
 |---|---|---|
@@ -464,6 +491,41 @@ At the end of every component mapping (before commit/sync) walk through these 8 
 | 8 | **Drift test passed** — candidate issues classified: drift, verify-queue, or discarded | `drifts.md` + `verify-queue.md` |
 
 Tick off in the spec under "Drift notes": *"Spec last validated: [date] (A6 walked through)."*
+
+#### Drift review — proactive prompt after A6
+
+After the per-component checks pass, read `drifts.md`. If ≥1 entry has `Action: OPEN`, surface a prompt before the mapping pass closes:
+
+```
+X OPEN drifts found in drifts.md.
+Review now? [y/N]
+```
+
+- **User declines** → silent return. `drifts.md` unchanged.
+- **User confirms** → walk-through, sorted by severity (`Critical` → `Major` → `Minor`). Per drift, present the row and offer three options:
+
+  ```
+  Drift: <component> — <type> [Severity][Owner] <what differs>
+  Action:
+    1. revert-figma — designer aligns Figma to code (task: "<exact change>")
+    2. accept — code is the truth; update mapping-row to recognise code value
+    3. update-code — code aligns to Figma (manual or implement-skill follow-up)
+  ```
+
+  Per choice:
+
+  | Choice | Action-state | Side effects |
+  |---|---|---|
+  | revert-figma | `SCHEDULED` | Drift stays open until designer confirms Figma change; entry kept for next review |
+  | accept | `ACCEPTED` | Mapping-row updated in spec to acknowledge code value; drift closed |
+  | update-code | `SCHEDULED` | Drift stays open with a clear code-fix action; closes when fix lands and next mapping pass confirms |
+  | (skip / `IGNORED`) | `IGNORED` | User explicitly skips — drift stays for record without action |
+
+- Status-log update happens automatically: append a row to `drifts.md § Status log` with date, component, drift, new status.
+
+**Why proactive, not a separate command:** the moment the mapping context is fresh in memory is the right moment to decide. A separate `/review-drifts` command would require remembering to run it; proactive surfacing eliminates that friction. Walk-through is opt-in per pass (`[y/N]`).
+
+**Scope.** This is mapping-side drift-loop closing. Implement-side surfacing (drift-summary printed in chat after each emit) is a separate concern handled by the sister `figma-to-code-implement` skill.
 
 ## References
 

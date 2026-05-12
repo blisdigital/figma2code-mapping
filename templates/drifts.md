@@ -18,6 +18,18 @@ For every candidate: **"Would MCP code generation from this Figma node produce a
 | `token-mismatch` | Token value in `theme/tokens.ts` ≠ Figma | Theme — affects all consumers |
 | `component-missing` | Figma element without code component | DEV creates; **agent does not generate** |
 
+## Action enum
+
+The `Action` column tracks decision state per drift. Set by the post-A6 review prompt (see SKILL.md § A6 — Drift review).
+
+| Status | Meaning |
+|---|---|
+| `OPEN` | Detected, no decision yet. Surfaced by post-A6 prompt on next mapping pass. |
+| `ACCEPTED` | User decided code is the truth — mapping-row updated to recognise the code value. Drift closed. |
+| `IGNORED` | User decided drift is not worth resolving (cosmetic, below visible threshold). Stays here for record. |
+| `SCHEDULED` | Resolution planned for later (e.g., next sprint, design refresh). Surface again on next review. |
+| `RESOLVED` | Fix landed (in code or Figma). Drift closed; entry kept for audit-trail. |
+
 ---
 
 ## For developers (DEV)
@@ -30,13 +42,13 @@ _(none)_
 
 | Component | Drift | Location | Action |
 |---|---|---|---|
-| | | | |
+| | | | `OPEN` |
 
 ### Minor
 
 | Component | Drift | Location | Action |
 |---|---|---|---|
-| | | | |
+| | | | `OPEN` |
 
 ---
 
@@ -44,9 +56,9 @@ _(none)_
 
 Drifts marked `[DEV+DESIGNER]`: design choice required (change code or update Figma?).
 
-| Component | Drift | What differs | Question for designer |
-|---|---|---|---|
-| | | | |
+| Component | Drift | What differs | Question for designer | Action |
+|---|---|---|---|---|
+| | | | | `OPEN` |
 
 ---
 

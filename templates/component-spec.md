@@ -57,6 +57,17 @@
 |---|---|---|
 | `[e.g. primary]` | `[e.g. Button]` | `[e.g. variant="contained" color="highlight"]` |
 
+## Responsive behavior (only when Figma has constraints or responsive variants)
+
+[Skip this section entirely if the component is static across breakpoints. When Figma shows responsive variants or constraints that change layout/sizing per breakpoint: document them here so emit knows what changes per breakpoint.]
+
+| Breakpoint | What changes | Figma evidence |
+|---|---|---|
+| `< md` | [e.g., gap shrinks `8 → 4`, buttons go full-width, label hides] | [e.g., variant `Size=mobile`, or constraint `Fill` instead of `Fixed 240px`] |
+| `≥ md` | [e.g., default layout, side-by-side, gap `8`] | [default variant, or constraint as documented] |
+
+> **Mapping fact, not implementation rule.** This captures responsive *intent* from Figma — what visually changes and on what evidence. The sister `figma-to-code-implement` skill consumes this to pick the right unit (rem vs px, `flex-1` vs fixed width). Without this section, the agent guesses or asks per emit.
+
 ## Drift notes
 
 [Optional — only fill when there is drift that passes the drift test (would MCP code generation from Figma produce a visually wrong result? Yes → drift). `[VERIFY]` items, hardcoded-with-correct-value, and code-only abstraction administration do NOT belong here — those go to `verify-queue.md` or nowhere. One line per drift.]

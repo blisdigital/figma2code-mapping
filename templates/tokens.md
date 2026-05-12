@@ -33,16 +33,24 @@ touches. Subsequent components extend the tables.
 
 ## Project styling stack
 
+**[REQUIRED — fill before first map]**
+
 > **Mapping fact, not implementation rule.** This documents *what the codebase
-> uses*. The future implementation-skill (TBD) will consume this to enforce
-> single-API styling at code-emit time. Mapping documents; implementation enforces.
+> uses*. The sister [`figma-to-code-implement`](https://github.com/blisdigital/figma2code-implement)
+> skill consumes this to enforce single-API styling at code-emit time.
+> Mapping documents; implementation enforces.
+>
+> **Why mandatory:** without this, downstream emit produces dual-styling output
+> (e.g., `className` strings in an Emotion-only codebase), which is expensive
+> to refactor. `map X` halts before A2 if the `[REQUIRED]` marker is still
+> here; A6 check 0b verifies it stays filled on every pass.
 
 - **API:** [e.g., Emotion `styled()` + `css={}`, or Tailwind classes only, or CSS modules, or styled-components]
 - **Theme access:** [e.g., `import theme from 'theme'` → `theme.X`, or `var(--name)` from `:root`, or `tw-prefix-X`]
 - **Not used:** [explicit list — e.g., "className-direct, inline-styles, Tailwind, styled-components, CSS modules" — prevents parallel paradigms in downstream emit]
 
 If the project mixes APIs (e.g., legacy CSS modules alongside new Emotion), document
-both and mark which is canonical for new work.
+both and mark which is canonical for new work. Remove the `[REQUIRED]` marker once filled.
 
 ---
 
