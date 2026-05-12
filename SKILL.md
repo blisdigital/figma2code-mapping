@@ -29,7 +29,7 @@ The skill delivers this through five mechanisms (see [README § Vision](README.m
 
 1. Token mapping (`docs/tokens.md`) — status per row
 2. Component mapping (`docs/components.md` + co-located per-component specs)
-3. Drift as decision point (`docs/drifts.md`) — severity + owner
+3. Drift as decision point (`docs/drifts-mapping.md`) — severity + owner
 4. Verify queue (`docs/verify-queue.md`) — prevents false conclusions
 5. Hard Rule "consume existing" — the A1-A6 method enforces this
 
@@ -63,7 +63,7 @@ Eleven rules that always apply, regardless of step. On conflict between sections
    | Frame type | Detection at mapping-time | Handling |
    |---|---|---|
    | **Component-instance** | `data-node-id="I<frame>;<master>"` — master-id present | Link to existing code component in `components.md`. Component-spec required. |
-   | **Frame ↔ code-component** (Figma-hygiene gap) | **Incidental notice** during normal A4 work — name + tokens + structure strongly align with an existing code component, but the frame has no master-id. User always gates. See A4-classify. | Promote in `components.md` with `figma-master-missing` note. Add drift to `drifts.md`: "Figma frame should be component-instance". |
+   | **Frame ↔ code-component** (Figma-hygiene gap) | **Incidental notice** during normal A4 work — name + tokens + structure strongly align with an existing code component, but the frame has no master-id. User always gates. See A4-classify. | Promote in `components.md` with `figma-master-missing` note. Add drift to `drifts-mapping.md`: "Figma frame should be component-instance". |
    | **Component-missing drift** | Frame represents a reusable pattern but no code-component exists, and the team agrees one should | Mark as `component-missing` drift (Hard rule #9). Developer creates code-component. |
    | **Element-frame** | No master-id, no strong alignment with an existing component | **Token-mapping only** — no component-spec. Tokens verified per Hard rule #11. |
 
@@ -139,10 +139,10 @@ Mapping complete for X. Run `/figma-to-code-implement <node>` now to emit code f
 | `components.md` | `docs/` | Index with Uses column and atomic-design classification |
 | `<name>.md` (atom/molecule/organism) | **next to `<name>.tsx`** in the same folder | Per component: spec, props, states, mapping to Figma |
 | `<name>.md` (template) | **next to `page.tsx`** in the same route folder | Page-level mapping |
-| `drifts.md` | `docs/` | Central drift aggregator (drift-test passers only) |
+| `drifts-mapping.md` | `docs/` | Central drift aggregator (drift-test passers only) |
 | `verify-queue.md` | `docs/` | `[VERIFY]` items for the next live MCP session |
 
-**Co-location convention:** per-component specs live next to the component they document — not in a separate `docs/components/` folder. Benefit: on refactor/rename the spec automatically moves along, and code review sees immediately whether the spec was updated. Project-wide indexes (`tokens.md`, `components.md`, `drifts.md`, `verify-queue.md`) stay in `docs/`.
+**Co-location convention:** per-component specs live next to the component they document — not in a separate `docs/components/` folder. Benefit: on refactor/rename the spec automatically moves along, and code review sees immediately whether the spec was updated. Project-wide indexes (`tokens.md`, `components.md`, `drifts-mapping.md`, `verify-queue.md`) stay in `docs/`.
 
 Templates live in `templates/`. The `setup` command copies them into the project repo.
 
@@ -153,7 +153,7 @@ Templates live in `templates/`. The `setup` command copies them into the project
 | Check or add token value | `tokens.md` |
 | Build or use component | `components.md`, relevant `<component-folder>/<name>.md` |
 | Map Figma frame to code | `components.md`, involved specs; refresh `figma-context/<node-id>.json` via MCP when available |
-| Make drift decision | `drifts.md` (existing), spec of the involved component, `verify-queue.md` |
+| Make drift decision | `drifts-mapping.md` (existing), spec of the involved component, `verify-queue.md` |
 | Encounter unknown Figma name | `verify-queue.md` (possibly already known), otherwise add a new `[VERIFY]` item |
 
 ## Source mechanism
@@ -265,7 +265,7 @@ Format: one line per drift in the "Drift notes" section of the spec.
 - <type> [Severity][Owner] — <file:line> <what differs>. Action: <what to do>.
 ```
 
-Every drift in `drifts.md` carries an `Action` column with one of five states: `OPEN`, `ACCEPTED`, `IGNORED`, `SCHEDULED`, `RESOLVED`. New drifts default to `OPEN`; the post-A6 drift-review step (§ A6) updates state when the user decides per drift. Without an Action column, `drifts.md` is an archive — with it, drift becomes a working backlog with an audit trail.
+Every drift in `drifts-mapping.md` carries an `Action` column with one of five states: `OPEN`, `ACCEPTED`, `IGNORED`, `SCHEDULED`, `RESOLVED`. New drifts default to `OPEN`; the post-A6 drift-review step (§ A6) updates state when the user decides per drift. Without an Action column, `drifts-mapping.md` is an archive — with it, drift becomes a working backlog with an audit trail.
 
 ### Severity — heuristic
 
@@ -281,7 +281,7 @@ Category level, not hardcoded thresholds. Concrete numeric thresholds (e.g. "5% 
 
 One question, always: **"Would MCP code generation from this Figma node produce a visually wrong result?"**
 
-- **Yes** → drift, in `drifts.md` + spec.
+- **Yes** → drift, in `drifts-mapping.md` + spec.
 - **No** → another bucket:
   - `verify-queue.md` — `[VERIFY]` items for the next live-MCP session (unverified masters, unlocated overrides, derived data without source check).
   - **Tech debt** — hardcoded-with-correct-value, tokenization candidates, dead code → not in mapping docs, belongs in code review or issue tracker.
@@ -395,13 +395,13 @@ During normal A4 work the agent may notice — without a separate scan step — 
 - Variables enumerated in `get_variable_defs(frame)` overlap heavily with that component's documented vars, AND
 - Structural archetype matches (e.g., single text-node in clickable container with radius + padding = button-archetype).
 
-When alignment is incidentally obvious (not the result of hunting), surface it and let the user gate per Hard rule #7: *"Frame X data aligns with the Button component (name + tokens + structure). Promote as Frame ↔ code-component with figma-master-missing note? This also writes a drift to drifts.md."*
+When alignment is incidentally obvious (not the result of hunting), surface it and let the user gate per Hard rule #7: *"Frame X data aligns with the Button component (name + tokens + structure). Promote as Frame ↔ code-component with figma-master-missing note? This also writes a drift to drifts-mapping.md."*
 
 **User confirmed →**
 
 - Add row to `components.md` with `figma-master-missing` note
 - Component-spec required (per Hard rule #4 case 2)
-- Add drift to `drifts.md`: "Figma frame X should be component-instance of Y (data-alignment, user-confirmed)"
+- Add drift to `drifts-mapping.md`: "Figma frame X should be component-instance of Y (data-alignment, user-confirmed)"
 
 **User refused → element-frame** (token-only). Note in spec that the agent considered but user opted out, prevents re-asking. Record in `verify-queue.md` per Entry sources.
 
@@ -421,7 +421,7 @@ Do not improvise when the first fetch is incomplete — always go via payload re
 
 #### A4b. Mandatory comparison per hardcoded value
 
-For every hardcoded value in code (padding, border-radius, height, etc.) compare directly with the Figma instance value from MCP output. Do not just note "code value + token" — explicitly apply the drift test (Hard rule #3): does it match the Figma rendered output? On difference: drift in spec + `drifts.md`, not only in re-validation. **Drift detection belongs to A4, not later.**
+For every hardcoded value in code (padding, border-radius, height, etc.) compare directly with the Figma instance value from MCP output. Do not just note "code value + token" — explicitly apply the drift test (Hard rule #3): does it match the Figma rendered output? On difference: drift in spec + `drifts-mapping.md`, not only in re-validation. **Drift detection belongs to A4, not later.**
 
 #### A4c. Literal strings are mapping too
 
@@ -488,20 +488,20 @@ At the end of every component mapping (before commit/sync) walk through these ch
 | 5 | **Assets** — SVG/icon/image sources reference existing project assets or MCP-localhost URL — no new imports, no placeholders | Mapping table "Icon-source / Asset" |
 | 6 | **Literal strings** — `aria-label`, `alt`, `placeholder`, `title`, hardcoded labels in code are mapped (code value + source) | Mapping table "Text" or separate row "Aria-label" |
 | 7 | **Token-verdict per row** — every code-value row in the mapping table has a verdict in column 3 (token-path / raw-token-available / raw-legitimate). No bare "hardcoded" entries. | Mapping tables |
-| 8 | **Drift test passed** — candidate issues classified: drift, verify-queue, or discarded | `drifts.md` + `verify-queue.md` |
+| 8 | **Drift test passed** — candidate issues classified: drift, verify-queue, or discarded | `drifts-mapping.md` + `verify-queue.md` |
 
 Tick off in the spec under "Drift notes": *"Spec last validated: [date] (A6 walked through)."*
 
 #### Drift review — proactive prompt after A6
 
-After the per-component checks pass, read `drifts.md`. If ≥1 entry has `Action: OPEN`, surface a prompt before the mapping pass closes:
+After the per-component checks pass, read `drifts-mapping.md`. If ≥1 entry has `Action: OPEN`, surface a prompt before the mapping pass closes:
 
 ```
-X OPEN drifts found in drifts.md.
+X OPEN drifts found in drifts-mapping.md.
 Review now? [y/N]
 ```
 
-- **User declines** → silent return. `drifts.md` unchanged.
+- **User declines** → silent return. `drifts-mapping.md` unchanged.
 - **User confirms** → walk-through, sorted by severity (`Critical` → `Major` → `Minor`). Per drift, present the row and offer three options:
 
   ```
@@ -521,7 +521,7 @@ Review now? [y/N]
   | update-code | `SCHEDULED` | Drift stays open with a clear code-fix action; closes when fix lands and next mapping pass confirms |
   | (skip / `IGNORED`) | `IGNORED` | User explicitly skips — drift stays for record without action |
 
-- Status-log update happens automatically: append a row to `drifts.md § Status log` with date, component, drift, new status.
+- Status-log update happens automatically: append a row to `drifts-mapping.md § Status log` with date, component, drift, new status.
 
 **Why proactive, not a separate command:** the moment the mapping context is fresh in memory is the right moment to decide. A separate `/review-drifts` command would require remembering to run it; proactive surfacing eliminates that friction. Walk-through is opt-in per pass (`[y/N]`).
 
@@ -533,7 +533,7 @@ Review now? [y/N]
 - `templates/tokens.md` — empty tokens template
 - `templates/components.md` — empty components-index template
 - `templates/component-spec.md` — template for a single component spec
-- `templates/drifts.md` — empty drift-aggregator template
+- `templates/drifts-mapping.md` — empty drift-aggregator template
 - `templates/verify-queue.md` — empty `[VERIFY]`-queue template
 - `templates/claude-md-snippet.md` — markdown to paste into project CLAUDE.md
 - `templates/example-confirmation-modal/` — filled example
