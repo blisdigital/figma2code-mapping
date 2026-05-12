@@ -10,7 +10,7 @@ Scope is **mapping only** — the skill documents the relationship between Figma
 
 1. **Token mapping** (`docs/tokens.md`) — Figma variable → code path → value, with explicit status per row (`match` / `value-mismatch` / `figma-missing` / `code-missing`)
 2. **Component mapping** (`docs/components.md` + per-component specs co-located next to `<name>.tsx`) — atomic-design index, Uses column, variant and naming aliases
-3. **Drift as decision point** (`docs/drifts.md`) — not silently resolved but marked with severity (Critical/Major/Minor) and owner (DEV/DESIGNER/DEV+DESIGNER) so designer or dev picks a resolution
+3. **Drift as decision point** (`docs/drifts-mapping.md`) — not silently resolved but marked with severity (Critical/Major/Minor) and owner (DEV/DESIGNER/DEV+DESIGNER) so designer or dev picks a resolution
 4. **Verify queue** (`docs/verify-queue.md`) — unconfirmed mappings until the next live-MCP session, prevents false `figma-missing` conclusions
 5. **Hard Rule "consume existing"** — every Figma element matches first against existing primitives before something new is proposed; the A1-A6 method enforces this order
 
@@ -25,7 +25,7 @@ This skill is a **developer tool**. Audience: developers working in a React/Vue/
 | Layer | Where | What |
 |---|---|---|
 | **Skill (this repo)** | `~/.claude/skills/figma-to-code-mapping/` (via symlink) | The method itself — automatically loaded by Claude Code |
-| **Output (per project)** | `<your-project>/docs/` or `<your-project>/Figma-to-code/figma-to-code-mapping/` | The mapping docs that land in your repo (`tokens.md`, `components.md`, per-component specs, `drifts.md`, `verify-queue.md`) |
+| **Output (per project)** | `<your-project>/docs/` or `<your-project>/Figma-to-code/figma-to-code-mapping/` | The mapping docs that land in your repo (`tokens.md`, `components.md`, per-component specs, `drifts-mapping.md`, `verify-queue.md`) |
 
 The skill is project-agnostic and installed at user level; the mapping output lives in each project repo separately.
 
@@ -73,7 +73,7 @@ $ claude
 > /figma-to-code-mapping setup
 ```
 
-The skill asks whether it may create the `docs/` structure. On confirmation: copies `tokens.md`, `components.md`, `drifts.md`, `verify-queue.md`, and the `components/` template into the project repo.
+The skill asks whether it may create the `docs/` structure. On confirmation: copies `tokens.md`, `components.md`, `drifts-mapping.md`, `verify-queue.md`, and the `components/` template into the project repo.
 
 ### Permanently activate in project repo
 
@@ -108,7 +108,7 @@ figma2code/
     ├── tokens.md                       ← tokens template (Figma-name ↔ code-path ↔ value)
     ├── components.md                   ← components-index template (incl. Figma-node reverse lookup)
     ├── component-spec.md               ← template for a single component spec
-    ├── drifts.md                       ← drift-aggregator template
+    ├── drifts-mapping.md                       ← drift-aggregator template
     ├── verify-queue.md                 ← `[VERIFY]`-queue template
     ├── claude-md-snippet.md            ← prompt block for project-repo CLAUDE.md
     └── example-confirmation-modal/     ← filled example

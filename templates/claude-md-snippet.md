@@ -30,7 +30,7 @@ For any work on components, tokens, or Figma mapping: use the figma-to-code-mapp
   - `docs/tokens.md` — three-column token mapping
   - `docs/components.md` — atomic-design index with Uses relations
   - `<component-folder>/<name>.md` — per-component mapping spec (co-located)
-  - `docs/drifts.md` — aggregated drift-test passers
+  - `docs/drifts-mapping.md` — aggregated drift-test passers
   - `docs/verify-queue.md` — unconfirmed mappings for the next live-MCP session
 - Read before write, no improvising on gaps, organisms first on selection
 - Drift is briefly marked via the drift test, not extensively reported
