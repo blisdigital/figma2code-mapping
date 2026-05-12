@@ -14,7 +14,7 @@ For implementation-side concerns (refuse-raw, single-API enforcement, auto-layou
 
 | Output | Documented in SKILL.md | Strict? |
 |---|---|---|
-| `docs/tokens.md`, `components.md`, `drifts.md`, `verify-queue.md` | "The documents" table + intro paragraph | implicit |
+| `docs/tokens.md`, `components.md`, `drifts-mapping.md`, `verify-queue.md` | "The documents" table + intro paragraph | implicit |
 | `<component-folder>/<name>.md` (per-component specs co-located) | "Co-location convention" sub-section | explicit |
 | `figma-context/<node-id>.json` (cache) | "Cache + hash check" sub-section + setup-step `.gitignore` | explicit + operational |
 
