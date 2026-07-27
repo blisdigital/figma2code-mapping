@@ -1,6 +1,6 @@
 ---
 name: figma-to-code-mapping
-version: "3.6"
+version: "3.7"
 description: >
   Maps Figma designs onto an existing codebase via explicit documentation of tokens,
   components, and per-component specs. Use this skill when the user says
@@ -253,11 +253,12 @@ When in doubt: pick the lower level.
 
 ## Drift — short and pragmatic
 
-Mark drift in the spec where it belongs, not as a separate process. Three types:
+Mark drift in the spec where it belongs, not as a separate process. Four types:
 
 - **`value-mismatch`** — Code rendered output ≠ Figma. Fix at call site.
 - **`token-mismatch`** — Token-level deviation between theme and Figma. Fix address depends on the subtype — see the table below.
 - **`component-missing`** — Figma element without a code component. Mark it; agent does not auto-generate, developer creates the component.
+- **`code-syntax-mismatch`** — Figma variable's declared `codeSyntax` ≠ the actual code path in `tokens.md`. Passes the drift test via the emit path: MCP embeds codeSyntax verbatim in generated code, so a stale declaration produces wrong imports/paths even when the render looks correct. Fix address: the variable's codeSyntax metadata (designer/design-ops), unless the team decides code adopts the declared path.
 
 ### Token-mismatch subtypes
 
@@ -352,6 +353,16 @@ One row per token with:
 - Figma name (as it exists in Figma as a variable) or `[VERIFY]` if unconfirmed
 - Value
 - Use (short explanation)
+
+#### codeSyntax as mapping evidence
+
+Figma variables can carry a `codeSyntax` declaration (per platform: WEB / ANDROID / iOS) — the variable's own statement of how it appears in code. When codeSyntax is present in data already fetched (Plugin-API-based tooling and some MCP payloads expose it; plain `get_variable_defs` output may not), treat it as direct evidence for the code-path column instead of deriving the path yourself:
+
+1. **codeSyntax matches the actual code path** → document the path and note `via codeSyntax` in the Use column. Strongest evidence available; no `[VERIFY]` needed.
+2. **codeSyntax differs from actual code usage** → the code-path column documents the *actual* code path (code is source of truth, Hard rule #2). Mark drift `code-syntax-mismatch`.
+3. **codeSyntax absent** → current behavior: derive the path from code, `[VERIFY]` on doubt.
+
+codeSyntax is evidence when present, never a requirement — do not run extra fetches just to obtain it.
 
 > **Optional: Auto-layout conventions section.** If the project has a consistent convention for translating Figma's auto-layout primitives (fill, hug, direction) to code expressions (`flex-1`, `w-fit`, `flex-col`), document it in `tokens.md § Auto-layout conventions`. Token values are already in the token tables; this section captures the *semantic-intent translation* (fill, hug, direction) that does not map to a single token. Skip when patterns are ad-hoc — forced documentation of inconsistency creates overhead. See template for format.
 
