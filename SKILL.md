@@ -1,6 +1,6 @@
 ---
 name: figma-to-code-mapping
-version: "3.5"
+version: "3.6"
 description: >
   Maps Figma designs onto an existing codebase via explicit documentation of tokens,
   components, and per-component specs. Use this skill when the user says
@@ -256,13 +256,28 @@ When in doubt: pick the lower level.
 Mark drift in the spec where it belongs, not as a separate process. Three types:
 
 - **`value-mismatch`** — Code rendered output ≠ Figma. Fix at call site.
-- **`token-mismatch`** — Token value in `theme/tokens.ts` ≠ Figma. Fix in theme.
+- **`token-mismatch`** — Token-level deviation between theme and Figma. Fix address depends on the subtype — see the table below.
 - **`component-missing`** — Figma element without a code component. Mark it; agent does not auto-generate, developer creates the component.
+
+### Token-mismatch subtypes
+
+`token-mismatch` covers distinct failure classes with different fix addresses. Append the subtype to the type in the drift line: `token-mismatch/alias`. Bare `token-mismatch` reads as `/value` — existing drift rows stay valid.
+
+| Subtype | What deviates | Fix address |
+|---|---|---|
+| `/value` | Token value in theme ≠ Figma variable value | Theme file (dev) or Figma variable (designer) |
+| `/alias` | Semantic token resolves to a different primitive in code than the Figma alias target (e.g. code `button.bg → N100`, Figma `button/bg → N90`) | Alias wiring: theme reference or Figma alias target |
+| `/broken-alias` | Figma variable aliases a deleted/missing target, or a code token references a non-existent base token | Figma hygiene (designer) or theme cleanup (dev) |
+| `/mode` | Values match in the default mode but differ in another mode (e.g. dark) | Theming layer, per mode |
+
+`/broken-alias` is at least **Major**: a broken alias makes Figma fall back to raw values, so MCP output loses the token binding entirely.
+
+Classify subtypes only from data already fetched in A2/A4 — no separate scan pass, no hunting for alias targets or per-mode values the MCP output does not expose; `[VERIFY]` only on concrete reason to doubt.
 
 Format: one line per drift in the "Drift notes" section of the spec.
 
 ```
-- <type> [Severity][Owner] — <file:line> <what differs>. Action: <what to do>.
+- <type>[/subtype] [Severity][Owner] — <file:line> <what differs>. Action: <what to do>.
 ```
 
 Every drift in `drifts-mapping.md` carries an `Action` column with one of five states: `OPEN`, `ACCEPTED`, `IGNORED`, `SCHEDULED`, `RESOLVED`. New drifts default to `OPEN`; the post-A6 drift-review step (§ A6) updates state when the user decides per drift. Without an Action column, `drifts-mapping.md` is an archive — with it, drift becomes a working backlog with an audit trail.
