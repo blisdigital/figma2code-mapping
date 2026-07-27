@@ -1,6 +1,6 @@
 ---
 name: figma-to-code-mapping
-version: "3.7"
+version: "3.8"
 description: >
   Maps Figma designs onto an existing codebase via explicit documentation of tokens,
   components, and per-component specs. Use this skill when the user says
@@ -89,6 +89,7 @@ When yes, when no, and where to go instead.
 | **Implement** Figma frame as working code (emit) | ❌ no | Use [`figma-to-code-implement`](https://github.com/blisdigital/figma2code-implement) — it consumes this skill's output (tokens, components, specs, cache, drifts) and emits code via the codebase's tokens and components |
 | Build a full page **from a text description** (no Figma input) | ❌ no | `figma-generate-design` or `frontend-design` (greenfield) |
 | **Write to** the Figma file (create nodes, define variables) | ❌ no | `figma-use` |
+| Visualize or fix drifts **in** Figma (canvas findings-card, annotations, comments, token sync) | ❌ no | `figma-use` / Figma's own skills — consuming the Figma-fix packet in `drifts-mapping.md` (§ Drift review) |
 | Create Code Connect mappings (`.figma.ts`) | ❌ no | `figma-code-connect` |
 | Build a design system in Figma from code | ❌ no | `figma-generate-library` |
 | Write AI rules for a project (CLAUDE.md / AGENTS.md) | ❌ no | `figma-create-design-system-rules` |
@@ -542,12 +543,21 @@ Review now? [y/N]
 
   | Choice | Action-state | Side effects |
   |---|---|---|
-  | revert-figma | `SCHEDULED` | Drift stays open until designer confirms Figma change; entry kept for next review |
+  | revert-figma | `SCHEDULED` | Drift stays open until designer confirms Figma change; entry gains a Figma-fix packet (below) and is kept for next review |
   | accept | `ACCEPTED` | Mapping-row updated in spec to acknowledge code value; drift closed |
   | update-code | `SCHEDULED` | Drift stays open with a clear code-fix action; closes when fix lands and next mapping pass confirms |
   | (skip / `IGNORED`) | `IGNORED` | User explicitly skips — drift stays for record without action |
 
 - Status-log update happens automatically: append a row to `drifts-mapping.md § Status log` with date, component, drift, new status.
+
+**Figma-fix packet (revert-figma only).** A `revert-figma` decision means someone fixes Figma without the codebase at hand — the entry must be self-contained. On that choice, extend the drift entry in `drifts-mapping.md` with four fields, all from data already in the pass (cache, spec, MCP output — no extra fetches):
+
+- `node:` Figma node-id, plus deeplink when the fileKey is known — `https://www.figma.com/design/<fileKey>/?node-id=<node-id>` (URL uses `-` where the API uses `:`)
+- `figma-target:` the variable or property to change (e.g. alias target of `button/bg`; `corner-radius` on the frame)
+- `from → to:` current Figma value → target value from code
+- `mode:` only for `token-mismatch/mode` drifts
+
+The packet is the read-out contract for Figma-side execution. Making these drifts visible or fixing them *in* Figma — canvas findings-card next to the frame, Dev Mode annotations, pinned comments, or a token sync — is a write action outside this skill: run it with `figma-use` or Figma's own skills, consuming these fields (see § Skill boundary).
 
 **Why proactive, not a separate command:** the moment the mapping context is fresh in memory is the right moment to decide. A separate `/review-drifts` command would require remembering to run it; proactive surfacing eliminates that friction. Walk-through is opt-in per pass (`[y/N]`).
 
